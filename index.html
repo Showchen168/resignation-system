@@ -542,6 +542,59 @@
             renderStageChart(stats);
         };
 
+        function isPlaceholderFirebaseConfig(cfg) {
+            return !cfg.apiKey || cfg.apiKey.startsWith('YOUR_') || !cfg.projectId || cfg.projectId.includes('YOUR_PROJECT_ID');
+        }
+        function setAllRecords(newRecords) {
+            window.allRecords = (newRecords || []).sort((a, b) => new Date(b.date) - new Date(a.date));
+            if(window.renderRecordsTable) window.renderRecordsTable();
+            if(window.renderAdminTable) window.renderAdminTable();
+            if(window.updateCharts) window.updateCharts();
+        }
+
+        // Google Drive (可透過 __google_drive_config 覆寫)
+        const defaultGoogleDriveConfig = { 
+            apiKey: 'YOUR_GOOGLE_API_KEY', 
+            clientId: 'YOUR_GOOGLE_CLIENT_ID.apps.googleusercontent.com', 
+            scope: 'https://www.googleapis.com/auth/drive.file' 
+        };
+        let googleDriveConfig = { ...defaultGoogleDriveConfig };
+        try {
+            if (typeof __google_drive_config !== 'undefined') {
+                googleDriveConfig = { ...defaultGoogleDriveConfig, ...__google_drive_config };
+            }
+        } catch (e) {
+            console.warn('未讀取到自定義的 Google 雲端設定，使用預設值');
+        }
+        let googleDriveReady = false;
+        let googleDriveSignedIn = false;
+        let googleAuthInstance = null;
+        function isPlaceholderFirebaseConfig(cfg) {
+            return !cfg.apiKey || cfg.apiKey.startsWith('YOUR_') || !cfg.projectId || cfg.projectId.includes('YOUR_PROJECT_ID');
+        }
+        const LOCAL_STORAGE_KEY = 'resignation_records_local';
+        let useLocalStorage = false;
+        function setAllRecords(newRecords) {
+            window.allRecords = (newRecords || []).sort((a, b) => new Date(b.date) - new Date(a.date));
+            if(window.renderRecordsTable) window.renderRecordsTable();
+            if(window.renderAdminTable) window.renderAdminTable();
+            if(window.updateCharts) window.updateCharts();
+            if(window.updateDraftSelector) window.updateDraftSelector();
+        }
+        function loadLocalRecords() {
+            try {
+                const raw = localStorage.getItem(LOCAL_STORAGE_KEY);
+                if(!raw) return [];
+                const data = JSON.parse(raw);
+                return Array.isArray(data) ? data : [];
+            } catch {
+                return [];
+            }
+        }
+        function persistLocalRecords(records) {
+            localStorage.setItem(LOCAL_STORAGE_KEY, JSON.stringify(records || []));
+        }
+
         // Flow Configuration
         const flowConfig = {
             start: { title: '建立新離職案件', desc: '請輸入離職人員資訊以啟動評估流程。', icon: '📂', requireNote: false, visualStep: 0 },
