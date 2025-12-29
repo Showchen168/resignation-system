@@ -1,0 +1,981 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>研發離職面談與留才評估管理系統 (GitHub 部署版)</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+TC:wght@300;400;500;700&display=swap" rel="stylesheet">
+    <style type="text/tailwindcss">
+        body { font-family: 'Noto Sans TC', sans-serif; background-color: #f3f4f6; color: #1f2937; }
+        .chart-container { position: relative; width: 100%; max-width: 600px; margin: 0 auto; height: 300px; max-height: 400px; }
+        @media (min-width: 768px) { .chart-container { height: 350px; } }
+        .step-node { transition: all 0.5s ease; }
+        /* Buttons */
+        .btn-primary { @apply bg-blue-700 text-white px-4 py-2 rounded hover:bg-blue-800 transition-colors duration-200 shadow-sm font-medium flex items-center justify-center; }
+        .btn-save { @apply bg-amber-100 border border-amber-300 text-amber-800 px-4 py-2 rounded hover:bg-amber-200 transition-colors duration-200 font-medium flex items-center justify-center; }
+        .btn-outline { @apply border border-gray-300 text-gray-700 px-4 py-2 rounded hover:bg-gray-50 transition-colors duration-200 font-medium flex items-center justify-center; }
+        .btn-back { @apply mt-2 w-full border border-transparent text-gray-400 hover:text-gray-600 px-4 py-1 rounded transition-colors duration-200 text-xs font-medium flex items-center justify-center; }
+        /* Inputs */
+        .input-field { @apply w-full border border-gray-300 rounded px-3 py-2 text-gray-700 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all bg-white; }
+        .select-field { 
+            @apply w-full border border-gray-300 rounded px-3 py-2 text-gray-700 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all bg-white appearance-none; 
+            background-image: url("data:image/svg+xml,%3csvg xmlns='http://www.w3.org/2000/svg' fill='none' viewBox='0 0 20 20'%3e%3cpath stroke='%236b7280' stroke-linecap='round' stroke-linejoin='round' stroke-width='1.5' d='M6 8l4 4 4-4'/%3e%3c/svg%3e"); 
+            background-position: right 0.5rem center; 
+            background-repeat: no-repeat; 
+            background-size: 1.5em 1.5em; 
+        }
+        .textarea-field { @apply w-full border border-gray-300 rounded px-3 py-2 text-gray-700 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all bg-white min-h-[80px]; }
+        
+        /* Flowchart & Cards */
+        .tree { display: flex; justify-content: center; padding: 20px; }
+        .tree ul { padding-top: 20px; position: relative; display: flex; justify-content: center; }
+        .tree li { float: left; text-align: center; list-style-type: none; position: relative; padding: 20px 5px 0 5px; }
+        .tree li::before, .tree li::after { content: ''; position: absolute; top: 0; right: 50%; border-top: 2px solid #94a3b8; width: 50%; height: 20px; }
+        .tree li::after { right: auto; left: 50%; border-left: 2px solid #94a3b8; }
+        .tree li:only-child::after, .tree li:only-child::before { display: none; }
+        .tree li:only-child { padding-top: 0; }
+        .tree li:first-child::before, .tree li:last-child::after { border: 0 none; }
+        .tree li:last-child::before { border-right: 2px solid #94a3b8; border-radius: 0 5px 0 0; }
+        .tree li:first-child::after { border-radius: 5px 0 0 0; }
+        .tree ul ul::before { content: ''; position: absolute; top: 0; left: 50%; border-left: 2px solid #94a3b8; width: 0; height: 20px; }
+        .flow-card { @apply bg-white border border-gray-300 rounded-md p-3 text-center shadow-sm relative z-10 text-sm font-medium inline-block min-w-[140px] max-w-[200px]; }
+        .flow-decision { @apply border-amber-400 bg-amber-50; }
+        .flow-action { @apply border-blue-200 bg-blue-50; }
+        .flow-label { @apply absolute bg-white px-2 py-0.5 text-xs font-bold text-gray-500 border border-gray-200 rounded-full shadow-sm; top: -12px; left: 50%; transform: translateX(-50%); z-index: 20; }
+        .note-card { @apply bg-blue-50 border-l-4 border-blue-500 p-3 text-sm text-gray-700 mb-3; }
+        .modal-overlay { background-color: rgba(0, 0, 0, 0.5); backdrop-filter: blur(2px); }
+        
+        /* Animations */
+        .animate-flash { animation: flash 1s; }
+        @keyframes flash { 0% { background-color: #d1fae5; } 100% { background-color: white; } }
+    </style>
+</head>
+<body class="bg-gray-100 min-h-screen flex flex-col">
+
+    <!-- Header -->
+    <header class="bg-white shadow border-b border-gray-200 sticky top-0 z-50">
+        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-3 flex justify-between items-center">
+            <div class="flex items-center space-x-3">
+                <span class="text-2xl">☁️</span>
+                <div class="flex flex-col">
+                    <h1 class="text-lg font-bold text-gray-800 leading-tight">研發離職面談與留才評估管理系統</h1>
+                    <span class="text-xs text-green-600 font-bold flex items-center">
+                        <span class="w-2 h-2 bg-green-500 rounded-full mr-1 animate-pulse"></span> 
+                        Github Deployment Version
+                    </span>
+                </div>
+            </div>
+            <nav class="hidden md:flex space-x-4 text-sm font-medium text-gray-600 items-center">
+                <a href="#case-processing" class="hover:text-blue-700 transition-colors">案件處理</a>
+                <a href="#records" class="hover:text-blue-700 transition-colors">歷史紀錄</a>
+                <a href="#analytics" class="hover:text-blue-700 transition-colors">數據看板</a>
+                <a href="#process-map" class="hover:text-blue-700 transition-colors">標準SOP</a>
+                <button onclick="toggleLanguage()" class="border border-blue-300 text-blue-600 hover:bg-blue-50 px-3 py-1 rounded transition-colors flex items-center">
+                    <span class="text-xs mr-1">🌐</span> <span id="lang-btn-text">繁/简</span>
+                </button>
+                <a href="#admin-panel" class="text-blue-600 hover:text-blue-800 font-bold flex items-center bg-blue-50 px-3 py-1 rounded-full">
+                    <span class="mr-1">🔒</span> 管理後台
+                </a>
+            </nav>
+        </div>
+    </header>
+
+    <main class="flex-grow p-4 sm:p-8">
+        
+        <!-- Case Processing Section -->
+        <section id="case-processing" class="max-w-7xl mx-auto mb-12">
+            <div class="mb-6 flex items-center justify-between">
+                <div>
+                    <h2 class="text-2xl font-bold text-gray-800">離職案件處理作業</h2>
+                    <p class="text-gray-500 text-sm mt-1">請依照標準流程進行面談紀錄與決策</p>
+                </div>
+            </div>
+
+            <div class="grid grid-cols-1 lg:grid-cols-12 gap-6 bg-white rounded-lg shadow-md overflow-hidden border border-gray-200">
+                <!-- Left: Control Panel -->
+                <div class="lg:col-span-5 border-r border-gray-200 bg-gray-50">
+                    <div id="step-display" class="p-6 h-full flex flex-col justify-between">
+                        <div>
+                            <div class="flex items-center justify-between mb-4">
+                                <div class="flex items-center space-x-2 text-blue-600 font-semibold text-xs uppercase tracking-wider">
+                                    <span id="current-stage-icon">📂</span>
+                                    <span id="current-stage-label">案件建立</span>
+                                </div>
+                                <!-- Draft Selector (Quick Access) -->
+                                <div id="draft-resume-area" class="w-1/2 hidden">
+                                    <select id="draft-select" onchange="safeLoadDraft(this.value)" class="select-field text-xs py-1 border-amber-300 bg-amber-50 font-bold text-amber-700 cursor-pointer">
+                                        <option value="">📂 載入暫存 (Drafts)...</option>
+                                        <!-- Populated via JS -->
+                                    </select>
+                                </div>
+                            </div>
+
+                            <h4 id="step-title" class="text-xl font-bold text-gray-900 mb-2">建立新離職案件</h4>
+                            <p id="step-desc" class="text-gray-600 leading-relaxed mb-6 text-sm">
+                                請輸入離職人員資訊以啟動評估流程。
+                            </p>
+                            
+                            <div id="input-area-start" class="mb-6 space-y-4 bg-white p-4 rounded-md border border-gray-200 shadow-sm">
+                                <div>
+                                    <label class="block text-xs font-bold text-gray-500 mb-1">離職人員姓名 <span class="text-red-500">*</span></label>
+                                    <input type="text" id="emp-name" class="input-field" placeholder="請輸入全名">
+                                </div>
+                                <div>
+                                    <label class="block text-xs font-bold text-gray-500 mb-1">直屬主管姓名 <span class="text-red-500">*</span></label>
+                                    <input type="text" id="sup-name" class="input-field" placeholder="請輸入全名">
+                                </div>
+                            </div>
+
+                            <div id="notes-history-area" class="hidden mb-4 space-y-3"></div>
+
+                            <div id="input-area-notes" class="hidden mb-6 bg-white p-4 rounded-md border border-gray-200 shadow-sm">
+                                <label id="notes-label" class="block text-xs font-bold text-gray-700 mb-2">本次面談紀錄 / 評語 (必填)</label>
+                                <textarea id="current-notes" class="textarea-field" placeholder="請詳細記錄面談重點..."></textarea>
+                            </div>
+
+                            <div id="input-area-meeting" class="hidden mb-6 bg-white p-4 rounded-md border border-gray-200 shadow-sm">
+                                <label id="meeting-label" class="block text-xs font-bold text-gray-700 mb-2">會議安排時間 (必填)</label>
+                                <input type="datetime-local" id="meeting-time" class="input-field">
+                            </div>
+                        </div>
+                        
+                        <!-- Action Buttons Area -->
+                        <div class="space-y-3 pt-6 border-t border-gray-200">
+                            <!-- JS will inject buttons here -->
+                            <div id="action-area">
+                                <div class="space-y-2">
+                                    <button class="w-full btn-primary" onclick="validateAndStart()">
+                                        <span class="mr-2">＋</span> 建立案件並開始評估
+                                    </button>
+                                    <!-- START SCREEN SAVE BUTTON -->
+                                    <button class="w-full btn-save" onclick="saveDraft()">
+                                        <span class="mr-2">💾</span> 暫存目前資料
+                                    </button>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div id="reset-area" class="hidden mt-4 pt-4 border-t border-gray-200 text-center">
+                            <button onclick="resetFlow()" class="text-sm text-gray-500 hover:text-gray-800 flex items-center justify-center w-full font-medium">
+                                <span>↺</span> <span class="ml-1">歸檔並建立新案件</span>
+                            </button>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Right: Visual Path -->
+                <div class="lg:col-span-7 p-8 bg-white relative">
+                    <div class="h-full flex flex-col items-center justify-center">
+                        <div id="case-info" class="hidden w-full max-w-md mb-8 p-4 bg-blue-50 text-blue-900 rounded-lg text-sm border border-blue-100 flex justify-between items-center shadow-sm">
+                            <div class="flex items-center">
+                                <span class="w-2 h-2 bg-blue-500 rounded-full mr-2"></span>
+                                <span>人員: <strong id="v-emp-name" class="text-lg mr-4"></strong></span>
+                            </div>
+                            <div class="text-gray-600">
+                                主管: <strong id="v-sup-name"></strong>
+                            </div>
+                        </div>
+
+                        <div id="flow-visual" class="w-full max-w-md space-y-4">
+                            <!-- Visual Nodes (Same as before) -->
+                            <div id="v-step-1" class="step-node p-4 rounded-lg border border-gray-200 bg-gray-50 text-gray-400 flex items-center">
+                                <div class="w-8 h-8 rounded-full border-2 border-gray-300 flex items-center justify-center mr-4 font-bold text-sm bg-white">1</div>
+                                <div><div class="font-bold text-sm">直屬主管評估</div><div class="text-xs">初步篩選與面談</div></div>
+                            </div>
+                            <div id="v-step-2" class="step-node p-4 rounded-lg border border-gray-200 bg-gray-50 text-gray-400 flex items-center">
+                                <div class="w-8 h-8 rounded-full border-2 border-gray-300 flex items-center justify-center mr-4 font-bold text-sm bg-white">2</div>
+                                <div><div class="font-bold text-sm">Show / Rex 面談</div><div class="text-xs">原因分析與二階評估</div></div>
+                            </div>
+                            <div id="v-step-3" class="step-node p-4 rounded-lg border border-gray-200 bg-gray-50 text-gray-400 flex items-center">
+                                <div class="w-8 h-8 rounded-full border-2 border-gray-300 flex items-center justify-center mr-4 font-bold text-sm bg-white">3</div>
+                                <div><div class="font-bold text-sm">Sammy 行政作業</div><div class="text-xs">會議時間協調</div></div>
+                            </div>
+                            <div id="v-step-4" class="step-node p-4 rounded-lg border border-gray-200 bg-gray-50 text-gray-400 flex items-center">
+                                <div class="w-8 h-8 rounded-full border-2 border-gray-300 flex items-center justify-center mr-4 font-bold text-sm bg-white">4</div>
+                                <div><div class="font-bold text-sm">彥靈總 最終決策</div><div class="text-xs">留才核決</div></div>
+                            </div>
+                            <div id="v-step-5" class="step-node p-4 rounded-lg border border-gray-200 bg-gray-50 text-gray-400 flex items-center">
+                                <div class="w-8 h-8 rounded-full border-2 border-gray-300 flex items-center justify-center mr-4 font-bold text-sm bg-white">5</div>
+                                <div><div class="font-bold text-sm">留才方案/流程</div><div class="text-xs">方案執行與最終選擇</div></div>
+                            </div>
+                            <div id="v-result" class="mt-8 p-6 rounded-lg text-center hidden w-full border-2 border-dashed">
+                                <div id="result-icon" class="text-5xl mb-3"></div>
+                                <div id="result-title" class="font-bold text-xl mb-4 text-gray-800"></div>
+                                <div class="text-left bg-gray-50 p-4 rounded text-sm border border-gray-200 space-y-3">
+                                    <p class="font-bold text-gray-500 text-xs border-b border-gray-200 pb-2 mb-2 uppercase tracking-wide">案件全紀錄摘要</p>
+                                    <div id="final-summary-content" class="space-y-3 max-h-48 overflow-y-auto pr-2"></div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- Records Table (Visible Drafts) -->
+        <section id="records" class="max-w-7xl mx-auto mb-12 bg-white rounded-lg shadow-sm border border-gray-200">
+            <div class="p-6 border-b border-gray-200 flex justify-between items-center bg-gray-50">
+                <h3 class="text-lg font-bold text-gray-800">歷史案件紀錄 (含未結案草稿)</h3>
+                <span class="text-xs text-gray-500">草稿會標示為黃色</span>
+            </div>
+            <div class="overflow-x-auto">
+                <table class="min-w-full divide-y divide-gray-200">
+                    <thead class="bg-gray-50">
+                        <tr>
+                            <th class="px-6 py-3 text-left text-xs font-bold text-gray-500 uppercase">日期</th>
+                            <th class="px-6 py-3 text-left text-xs font-bold text-gray-500 uppercase">離職人員</th>
+                            <th class="px-6 py-3 text-left text-xs font-bold text-gray-500 uppercase">處理人</th>
+                            <th class="px-6 py-3 text-left text-xs font-bold text-gray-500 uppercase">階段</th>
+                            <th class="px-6 py-3 text-left text-xs font-bold text-gray-500 uppercase">狀態/結果</th>
+                            <th class="px-6 py-3 text-left text-xs font-bold text-gray-500 uppercase">操作</th>
+                        </tr>
+                    </thead>
+                    <tbody id="records-body" class="bg-white divide-y divide-gray-200">
+                        <!-- Data populated by JS -->
+                    </tbody>
+                </table>
+            </div>
+        </section>
+
+        <!-- Process Flowchart Section (SOP) -->
+        <section id="process-map" class="max-w-7xl mx-auto mb-12 py-8 border-t border-gray-200">
+            <div class="flex flex-col md:flex-row justify-center items-center mb-8 relative">
+                <div class="text-center">
+                    <h3 class="text-xl font-bold text-gray-800">標準作業流程圖 (SOP)</h3>
+                    <p class="text-gray-500 mt-1 text-sm">離職面談與留才決策路徑</p>
+                </div>
+                <div class="mt-4 md:mt-0 md:absolute md:right-0">
+                    <button id="btn-download-sop" onclick="downloadSOPImage()" class="flex items-center text-sm bg-white border border-gray-300 text-gray-700 hover:bg-gray-50 px-3 py-2 rounded-md shadow-sm transition-colors">
+                        <span class="mr-2">📷</span> <span>下載完整流程圖</span>
+                    </button>
+                </div>
+            </div>
+            
+            <div class="overflow-x-auto pb-4 flex justify-center">
+                <div id="sop-tree-container" class="tree bg-white p-8 rounded-lg min-w-[800px] flex justify-center"> 
+                    <ul>
+                        <li>
+                            <div class="flow-card">1. 人員提出離職<br><span class="text-xs text-gray-500">(向直屬主管)</span></div>
+                            <ul>
+                                <li>
+                                    <div class="flow-card bg-orange-50 border-orange-300 text-orange-800">通知彥靈總</div>
+                                </li>
+                                <!-- Regular Path -->
+                                <li>
+                                    <div class="flow-card flow-decision">2. 直屬主管評估<br><span class="text-xs text-gray-600">是否為優秀人才?</span></div>
+                                    <ul>
+                                        <li>
+                                            <span class="flow-label text-green-600">是 (留才)</span>
+                                            <div class="flow-card flow-action">3. Show / Rex 面談<br><span class="text-xs text-gray-500">分析因素</span></div>
+                                            <ul>
+                                                <li>
+                                                    <div class="flow-card flow-decision">需彥靈總面談?</div>
+                                                    <ul>
+                                                        <li>
+                                                            <span class="flow-label text-green-600">是</span>
+                                                            <div class="flow-card flow-action">Sammy<br><span class="text-xs text-gray-500">安排會議時間</span></div>
+                                                            <ul>
+                                                                <li>
+                                                                    <div class="flow-card flow-action">4. 彥靈總面談<br><span class="text-xs text-gray-500">最終評估</span></div>
+                                                                    <ul>
+                                                                        <li>
+                                                                            <div class="flow-card flow-decision">核准留用?</div>
+                                                                            <ul>
+                                                                                <li>
+                                                                                    <span class="flow-label text-green-600">是</span>
+                                                                                    <div class="flow-card bg-green-100 border-green-500 text-green-800">5. 留才方案/流程</div>
+                                                                                </li>
+                                                                                <li>
+                                                                                    <span class="flow-label text-red-500">否</span>
+                                                                                    <div class="flow-card bg-gray-100 border-gray-300 text-gray-500">正常離職流程</div>
+                                                                                </li>
+                                                                            </ul>
+                                                                        </li>
+                                                                    </ul>
+                                                                </li>
+                                                            </ul>
+                                                        </li>
+                                                        <li>
+                                                            <span class="flow-label text-red-500">否</span>
+                                                            <div class="flow-card bg-gray-100 border-gray-300 text-gray-500">正常離職流程</div>
+                                                        </li>
+                                                    </ul>
+                                                </li>
+                                            </ul>
+                                        </li>
+                                        <li>
+                                            <span class="flow-label text-red-500">否</span>
+                                            <div class="flow-card bg-gray-100 border-gray-300 text-gray-500">正常離職流程</div>
+                                        </li>
+                                    </ul>
+                                </li>
+                            </ul>
+                        </li>
+                    </ul>
+                </div>
+            </div>
+        </section>
+        
+        <!-- ADMIN PANEL SECTION -->
+        <section id="admin-panel" class="py-16 bg-gray-800 text-white rounded-t-3xl mt-8">
+            <div class="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8">
+                <div class="mb-8 text-center">
+                    <h3 class="text-2xl font-bold flex items-center justify-center"><span class="mr-2">🔒</span> 管理後台</h3>
+                    <p class="text-gray-400 text-sm mt-1">敏感資料存取權限驗證 (資料庫同步模式)</p>
+                </div>
+
+                <div id="admin-login" class="max-w-sm mx-auto bg-gray-700 p-8 rounded-xl shadow-xl border border-gray-600">
+                    <div class="space-y-4">
+                        <div><label class="block text-sm font-bold text-gray-300 mb-1">管理員帳號</label><input type="text" id="admin-user" class="w-full bg-gray-600 border border-gray-500 rounded px-3 py-2 text-white"></div>
+                        <div><label class="block text-sm font-bold text-gray-300 mb-1">密碼</label><input type="password" id="admin-pass" class="w-full bg-gray-600 border border-gray-500 rounded px-3 py-2 text-white"></div>
+                        <button onclick="checkAdminLogin()" class="w-full bg-blue-600 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded">登入系統</button>
+                        <p id="login-error" class="text-red-400 text-xs text-center hidden">帳號或密碼錯誤</p>
+                    </div>
+                </div>
+
+                <div id="admin-dashboard" class="hidden">
+                    <div class="flex justify-between items-center mb-6 border-b border-gray-600 pb-4">
+                        <h4 class="text-lg font-bold">所有面談紀錄總覽</h4>
+                        <div class="flex gap-2">
+                             <input type="file" id="json-import" accept=".json" class="hidden" onchange="importDataJSON(this)">
+                             <button onclick="document.getElementById('json-import').click()" class="bg-amber-600 hover:bg-amber-700 text-white text-sm px-4 py-2 rounded flex items-center shadow-lg"><span>🔄</span> <span class="ml-2">匯入備份 (上傳至雲端)</span></button>
+                             <button onclick="exportDataJSON()" class="bg-blue-600 hover:bg-blue-700 text-white text-sm px-4 py-2 rounded flex items-center shadow-lg"><span>💾</span> <span class="ml-2">備份 (JSON)</span></button>
+                             <button onclick="exportToCSV()" class="bg-green-600 hover:bg-green-700 text-white text-sm px-4 py-2 rounded flex items-center shadow-lg"><span>📥</span> <span class="ml-2">下載報表 (CSV)</span></button>
+                            <button onclick="logoutAdmin()" class="border border-gray-500 text-gray-300 text-xs px-3 py-2 rounded hover:bg-gray-700 ml-2">登出</button>
+                        </div>
+                    </div>
+                    <div class="bg-white rounded-lg shadow overflow-x-auto text-gray-800">
+                        <table class="min-w-full divide-y divide-gray-200">
+                            <thead class="bg-gray-100">
+                                <tr>
+                                    <th class="px-4 py-3 text-left text-xs font-bold text-gray-500 uppercase">日期</th>
+                                    <th class="px-4 py-3 text-left text-xs font-bold text-gray-500 uppercase">人員</th>
+                                    <th class="px-4 py-3 text-left text-xs font-bold text-gray-500 uppercase">處理人</th>
+                                    <th class="px-4 py-3 text-left text-xs font-bold text-gray-500 uppercase">階段</th>
+                                    <th class="px-4 py-3 text-left text-xs font-bold text-gray-500 uppercase">備註</th>
+                                    <th class="px-4 py-3 text-left text-xs font-bold text-gray-500 uppercase">結果</th>
+                                    <th class="px-4 py-3 text-left text-xs font-bold text-gray-500 uppercase">操作</th>
+                                </tr>
+                            </thead>
+                            <tbody id="admin-table-body" class="bg-white divide-y divide-gray-200 text-sm"></tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- Edit Modal -->
+        <div id="edit-modal" class="fixed inset-0 modal-overlay hidden z-[100] flex items-center justify-center p-4">
+            <div class="bg-white rounded-xl shadow-2xl w-full max-w-lg overflow-hidden">
+                <div class="bg-gray-800 px-6 py-4 flex justify-between items-center">
+                    <h3 class="text-white font-bold">編輯紀錄</h3>
+                    <button onclick="closeEditModal()" class="text-gray-400 hover:text-white">✕</button>
+                </div>
+                <div class="p-6 space-y-4">
+                    <input type="hidden" id="edit-id">
+                    <div><label class="block text-xs font-bold text-gray-500 mb-1">建檔日期</label><input type="date" id="edit-date" class="input-field bg-gray-100" readonly></div>
+                    <div><label class="block text-xs font-bold text-gray-500 mb-1">離職人員</label><input type="text" id="edit-emp" class="input-field"></div>
+                    <div><label class="block text-xs font-bold text-gray-500 mb-1">最後處理人</label><input type="text" id="edit-handler" class="input-field"></div>
+                    <div><label class="block text-xs font-bold text-gray-500 mb-1">備註紀錄</label><textarea id="edit-note" class="textarea-field"></textarea></div>
+                    <div><label class="block text-xs font-bold text-gray-500 mb-1">最終結果</label><select id="edit-result" class="input-field"><option value="success">成功留任</option><option value="fail">留才失敗 (仍離職)</option><option value="exit">正常離職</option><option value="draft">進行中 (Draft)</option></select></div>
+                </div>
+                <div class="bg-gray-50 px-6 py-4 flex justify-between items-center border-t border-gray-100">
+                    <button onclick="deleteRecordFromModal()" class="text-red-500 hover:text-red-700 text-sm font-bold">🗑️ 刪除此紀錄</button>
+                    <div class="flex space-x-3"><button onclick="closeEditModal()" class="btn-outline bg-white">取消</button><button onclick="saveEdit()" class="btn-primary">儲存變更</button></div>
+                </div>
+            </div>
+        </div>
+
+    </main>
+
+    <footer class="bg-gray-900 text-gray-400 py-8 mt-auto"><div class="max-w-7xl mx-auto px-4 text-center text-sm"><p>&copy; 2025 公司內部管理系統 | 人才留任與離職管理模組</p></div></footer>
+
+    <!-- Standard Script Block -->
+    <script>
+        // Global State
+        window.allRecords = []; 
+        let currentSessionData = { empName: '', supName: '', meetingTime: '', notes: { supervisor: '', showRex: '', yanling: '', retention: '' } };
+        let currentStepKey = 'start';
+        let retentionChartInstance = null;
+        let outcomeChartInstance = null;
+        let currentLang = 'zh-TW';
+        window.currentDraftId = null;
+
+        // Flow Configuration
+        const flowConfig = {
+            start: { title: '建立新離職案件', desc: '請輸入離職人員資訊以啟動評估流程。', icon: '📂', requireNote: false, visualStep: 0 },
+            supervisor: { title: '直屬主管評估', desc: '請進行初步面談，評估是否為優秀人員，並記錄面談重點。', icon: '👤', requireNote: true, noteLabel: '直屬主管評語 (是否優秀/離職原因) *', next: [{ label: '是優秀人員 (進入留才程序)', target: 'show_rex', style: 'primary' }, { label: '否 (轉正常離職程序)', target: 'exit_normal_sup', style: 'outline' }], prev: 'start', visualStep: 1, stageName: '直屬主管' },
+            show_rex: { title: 'Show / Rex 二階面談', desc: '請參考主管評語，進行深入面談並分析主因 (工作內容/薪資)。', icon: '🛡️', requireNote: true, noteLabel: 'Show/Rex 分析紀錄 (因素判斷/建議) *', showHistory: ['supervisor'], next: [{ label: '需要彥靈總面談 (請 Sammy 安排)', target: 'assistant', style: 'primary' }, { label: '無需向上呈報 (轉正常離職程序)', target: 'exit_normal_rex', style: 'outline' }], prev: 'supervisor', visualStep: 2, stageName: 'Show/Rex' },
+            assistant: { title: 'Sammy 會議安排作業', desc: '請確認彥靈總行事曆，安排雙方會議時間。', icon: '📅', requireNote: false, requireTime: true, showHistory: ['supervisor', 'showRex'], next: [{ label: '會議安排完成 (進入彥靈總核決)', target: 'yanling', style: 'primary' }], prev: 'show_rex', visualStep: 3, stageName: 'Sammy' },
+            yanling: { title: '彥靈總 最終核決', desc: '請檢視前兩階紀錄，進行最終留任評估與決策。', icon: '👑', requireNote: true, noteLabel: '彥靈總 最終決策備註 *', showHistory: ['supervisor', 'showRex', 'meetingInfo'], next: [{ label: '核准留用 (進入方案執行)', target: 'retention_execution', style: 'success' }, { label: '不予留用 (轉正常離職程序)', target: 'exit_normal_yan', style: 'outline' }], prev: 'assistant', visualStep: 4, stageName: '彥靈總' },
+            retention_execution: { title: '留才方案/流程', desc: '請記錄留才方案細節（如調薪幅度、職位調整等），並確認最終結果。', icon: '📝', requireNote: true, noteLabel: '留才方案細節與結果說明 *', showHistory: ['supervisor', 'showRex', 'meetingInfo', 'yanling'], next: [{ label: '留才成功 (確定留任)', target: 'final_success', style: 'success' }, { label: '留才失敗 (仍選擇離職)', target: 'final_fail', style: 'outline' }], prev: 'yanling', visualStep: 5, stageName: '留才確認' },
+            exit_normal_sup: { title: '結案：進入正常離職程序', desc: '經直屬主管評估後，確認依正常程序辦理離職手續。', icon: '👋', isEnd: true, type: 'neutral', visualStep: 1, stageName: '直屬主管', outcomeType: 'exit' },
+            exit_normal_rex: { title: '結案：進入正常離職程序', desc: '經 Show/Rex 面談後，決定不進入下一階段，依正常程序辦理離職。', icon: '👋', isEnd: true, type: 'neutral', visualStep: 2, stageName: 'Show/Rex', outcomeType: 'exit' },
+            exit_normal_yan: { title: '結案：進入正常離職程序', desc: '經彥靈總評估後決定不予留用，依正常程序辦理離職。', icon: '👋', isEnd: true, type: 'neutral', visualStep: 4, stageName: '彥靈總', outcomeType: 'exit' },
+            final_success: { title: '結案：留才成功', desc: '員工接受留才方案，確定留任。', icon: '🎉', isEnd: true, type: 'success', visualStep: 5, stageName: '留才確認', outcomeType: 'retain', result: '成功留任' },
+            final_fail: { title: '結案：留才失敗 (仍離職)', desc: '雖經留才程序，員工仍決定離職。', icon: '🚪', isEnd: true, type: 'neutral', visualStep: 5, stageName: '留才確認', outcomeType: 'exit', result: '留才失敗 (仍離職)' }
+        };
+
+        // --- CORE LOGIC: Save & Load ---
+
+        window.saveDraft = function() {
+            // Get Current Input
+            let emp = document.getElementById('emp-name').value.trim();
+            let sup = document.getElementById('sup-name').value.trim();
+            
+            if(!emp || !sup) {
+                alert("請至少輸入人員姓名與主管姓名才能暫存。");
+                return;
+            }
+
+            // Sync Inputs
+            currentSessionData.empName = emp;
+            currentSessionData.supName = sup;
+            
+            if(currentStepKey !== 'start') {
+                const stepConfig = flowConfig[currentStepKey];
+                const currentNote = document.getElementById('current-notes').value;
+                if(stepConfig.requireNote) {
+                    if(currentStepKey === 'supervisor') currentSessionData.notes.supervisor = currentNote;
+                    else if(currentStepKey === 'show_rex') currentSessionData.notes.showRex = currentNote;
+                    else if(currentStepKey === 'yanling') currentSessionData.notes.yanling = currentNote;
+                    else if(currentStepKey === 'retention_execution') currentSessionData.notes.retention = currentNote;
+                }
+                if(stepConfig.requireTime) {
+                    currentSessionData.meetingTime = document.getElementById('meeting-time').value;
+                }
+            }
+
+            const draftData = {
+                date: new Date().toISOString().split('T')[0],
+                emp: currentSessionData.empName,
+                handler: currentSessionData.supName,
+                stage: flowConfig[currentStepKey]?.stageName || '案件建立',
+                lastNote: '手動暫存...',
+                result: '進行中 (Draft)',
+                outcomeType: 'draft',
+                draftStepKey: currentStepKey,
+                draftSessionData: currentSessionData
+            };
+            
+            // Call Database
+            if(window.saveDataToCloud) {
+                window.saveDataToCloud(draftData, true, false); // Alert = Yes
+            } else {
+                alert("資料庫尚未連線，請稍候...");
+            }
+        };
+
+        function safeLoadDraft(id) {
+            try {
+                if(!id) return;
+                const record = window.allRecords.find(r => r.id === id);
+                if(!record) { alert("找不到資料"); return; }
+
+                if(!confirm(`確定要載入 ${record.emp} 的進度嗎？目前未儲存的內容將會遺失。`)) {
+                    document.getElementById('draft-select').value = "";
+                    return;
+                }
+
+                // Restore ID
+                window.currentDraftId = id;
+
+                // Fix Step Key
+                let stepKey = record.draftStepKey;
+                if (!stepKey || !flowConfig[stepKey]) {
+                    // Smart Fallback
+                    if(record.stage.includes('直屬')) stepKey = 'supervisor';
+                    else if(record.stage.includes('Show')) stepKey = 'show_rex';
+                    else if(record.stage.includes('Sammy')) stepKey = 'assistant';
+                    else if(record.stage.includes('彥靈')) stepKey = 'yanling';
+                    else if(record.stage.includes('留才')) stepKey = 'retention_execution';
+                    else stepKey = 'start';
+                }
+                currentStepKey = stepKey;
+
+                // Restore Data
+                const defaultData = { empName: '', supName: '', meetingTime: '', notes: { supervisor: '', showRex: '', yanling: '', retention: '' } };
+                
+                // Fallback for old data without nested object
+                let sourceData = record.draftSessionData || {
+                    empName: record.emp,
+                    supName: record.handler,
+                    notes: { supervisor: record.lastNote } // Crude fallback
+                };
+
+                currentSessionData = {
+                    ...defaultData,
+                    ...sourceData,
+                    notes: { ...defaultData.notes, ...(sourceData.notes || {}) }
+                };
+
+                // UI Update
+                document.getElementById('emp-name').value = currentSessionData.empName;
+                document.getElementById('sup-name').value = currentSessionData.supName;
+                document.getElementById('v-emp-name').textContent = currentSessionData.empName;
+                document.getElementById('v-sup-name').textContent = currentSessionData.supName;
+                
+                if(stepKey !== 'start') {
+                    document.getElementById('case-info').classList.remove('hidden');
+                    document.getElementById('input-area-start').classList.add('hidden');
+                } else {
+                    document.getElementById('case-info').classList.add('hidden');
+                    document.getElementById('input-area-start').classList.remove('hidden');
+                }
+
+                transitionTo(stepKey);
+
+                // Force Fill
+                setTimeout(() => {
+                    const noteArea = document.getElementById('current-notes');
+                    if(noteArea) {
+                        if(currentStepKey === 'supervisor') noteArea.value = currentSessionData.notes.supervisor || '';
+                        if(currentStepKey === 'show_rex') noteArea.value = currentSessionData.notes.showRex || '';
+                        if(currentStepKey === 'yanling') noteArea.value = currentSessionData.notes.yanling || '';
+                        if(currentStepKey === 'retention_execution') noteArea.value = currentSessionData.notes.retention || '';
+                    }
+                    if(currentStepKey === 'assistant' && currentSessionData.meetingTime) {
+                        document.getElementById('meeting-time').value = currentSessionData.meetingTime;
+                    }
+                }, 100);
+
+            } catch(e) {
+                alert("載入錯誤: " + e.message);
+            } finally {
+                document.getElementById('draft-select').value = "";
+            }
+        }
+
+        // --- Standard UI Functions ---
+        const t2sMap = {}; const s2tMap = {}; 
+        "離:离,職:职,面:面,談:谈,與:与,留:留,評:评,估:估,管:管,理:理,系:系,統:统,正:正,式:式,作:作,業:业,版:版,案:案,件:件,處:处,歷:历,史:史,紀:纪,錄:录,數:数,據:据,看:看,板:板,標:标,準:准,後:后,台:台,繁:繁,简:简,鎖:锁,員:员,提:提,出:出,向:向,直:直,屬:属,主:主,優:优,秀:秀,人:人,才:才,是:是,啟:启,動:动,程:程,序:序,否:否,轉:转,常:常,階:阶,分:分,析:析,因:因,素:素,工:工,薪:薪,資:资,判:判,斷:断,需:需,彥:彦,靈:灵,總:总,行:行,政:政,會:会,議:议,時:时,間:间,協:协,調:調,最:最,終:终,決:决,策:策,核:核,准:准,方:方,予:予,結:结,已:已,中:中,連:连,線:线,建:建,立:立,新:新,請:请,輸:输,入:入,訊:讯,流:流,將:将,自:自,檔:档,姓:姓,名:名,全:全,本:本,重:重,點:点,必:必,填:填,詳:详,細:細,歸:歸,顯:顯,示:示,近:近,筆:筆,完:完,整:整,日:日,期:期,關:關,鍵:鍵,備:備,註:註,結:結,果:果,漏:漏,斗:斗,處:處,置:置,布:布,圖:圖,徑:徑,參:參,考:考,敏:敏,感:感,存:存,取:取,權:權,限:限,驗:驗,證:證,管:管,員:員,帳:帳,號:號,碼:碼,登:登,錯:錯,誤:誤,覽:覽,匯:匯,報:報,表:表,操:操,編:編,輯:輯,儲:儲,變:變,更:更,公:公,司:司,內:內,部:部,模:模,組:組,警:警,告:告,確:確,定:定,清:清,除:除,此:此,無:無,法:法,復:複,原:原,確:確,認:認,有:有,無:無,資:資,料:料,可:可,安:安,排:排,選:選,擇:擇,仍:仍,敗:敗,幅:幅,度:度,還:還,份:份,載:載,片:片,刪:刪,暫:暫,續:續,辦:辦".split(',').forEach(p => { const [t, s] = p.split(':'); t2sMap[t] = s; s2tMap[s] = t; });
+        function convertText(text, toLang) { let res = ''; for (let c of text) res += toLang === 'zh-CN' ? (t2sMap[c] || c) : (s2tMap[c] || c); return res; }
+        window.toggleLanguage = () => { currentLang = currentLang === 'zh-TW' ? 'zh-CN' : 'zh-TW'; walkAndConvert(document.body); window.updateCharts(); window.renderRecordsTable(); window.renderAdminTable(); window.updateDraftSelector(); };
+        function walkAndConvert(node) { if(node.nodeType===3) node.nodeValue = convertText(node.nodeValue, currentLang); else { if(node.tagName==='INPUT'||node.tagName==='TEXTAREA') if(node.placeholder) node.placeholder = convertText(node.placeholder, currentLang); node.childNodes.forEach(walkAndConvert); } }
+
+        function validateAndStart() {
+            const empName = document.getElementById('emp-name').value.trim();
+            const supName = document.getElementById('sup-name').value.trim();
+            if (!empName || !supName) { alert(convertText('請輸入完整資訊', currentLang)); return; }
+            currentSessionData.empName = empName;
+            currentSessionData.supName = supName;
+            window.currentDraftId = null;
+            document.getElementById('v-emp-name').textContent = empName;
+            document.getElementById('v-sup-name').textContent = supName;
+            document.getElementById('case-info').classList.remove('hidden');
+            document.getElementById('input-area-start').classList.add('hidden');
+            transitionTo('supervisor');
+        }
+
+        function transitionTo(targetKey) {
+            currentStepKey = targetKey;
+            const config = flowConfig[targetKey];
+            
+            // Title & Desc
+            document.getElementById('step-title').textContent = config.title;
+            document.getElementById('step-desc').textContent = config.desc;
+            
+            // Form Visibility
+            const nArea = document.getElementById('input-area-notes');
+            const mArea = document.getElementById('input-area-meeting');
+            const hArea = document.getElementById('notes-history-area');
+            const nLabel = document.getElementById('notes-label');
+            
+            document.getElementById('current-notes').value = '';
+            // Pre-fill
+            if(targetKey === 'supervisor' && currentSessionData.notes?.supervisor) document.getElementById('current-notes').value = currentSessionData.notes.supervisor;
+            if(targetKey === 'show_rex' && currentSessionData.notes?.showRex) document.getElementById('current-notes').value = currentSessionData.notes.showRex;
+            if(targetKey === 'yanling' && currentSessionData.notes?.yanling) document.getElementById('current-notes').value = currentSessionData.notes.yanling;
+            if(targetKey === 'retention_execution' && currentSessionData.notes?.retention) document.getElementById('current-notes').value = currentSessionData.notes.retention;
+            if(targetKey === 'assistant' && currentSessionData.meetingTime) document.getElementById('meeting-time').value = currentSessionData.meetingTime;
+
+            hArea.innerHTML = ''; hArea.classList.add('hidden');
+            nArea.classList.toggle('hidden', !config.requireNote);
+            if(config.requireNote) nLabel.textContent = config.noteLabel;
+            mArea.classList.toggle('hidden', !config.requireTime);
+
+            // History
+            if (config.showHistory) {
+                hArea.classList.remove('hidden');
+                config.showHistory.forEach(role => {
+                    const div = document.createElement('div'); div.className = 'note-card';
+                    if (role === 'meetingInfo') {
+                        div.innerHTML = `<strong>${convertText('Sammy 會議安排:', currentLang)}</strong><br><span class="text-blue-700 font-bold">${(currentSessionData.meetingTime || '').replace('T', ' ')}</span>`;
+                    } else {
+                        let rName = role === 'supervisor' ? `直屬主管 (${currentSessionData.supName})` : (role === 'yanling' ? '彥靈總' : (role==='retention'?'留才確認':'Show/Rex'));
+                        let nVal = currentSessionData.notes?.[role];
+                        div.innerHTML = `<strong>${convertText(rName, currentLang)}：</strong><br>${nVal || convertText('無紀錄', currentLang)}`;
+                    }
+                    hArea.appendChild(div);
+                });
+            }
+
+            // Buttons Construction
+            const actArea = document.getElementById('action-area');
+            actArea.innerHTML = '';
+
+            if (config.isEnd) {
+                // End State
+                nArea.classList.add('hidden'); mArea.classList.add('hidden');
+                document.getElementById('reset-area').classList.remove('hidden');
+                updateVisualFlow(config.visualStep, config.type, config.title);
+                
+                // Auto Final Save
+                let handler = config.handlerKey === 'supName' ? currentSessionData.supName : (config.handlerKey === 'Show/Rex' ? 'Show/Rex' : (config.handlerKey === '彥靈總' ? '彥靈總' : 'HR/Admin'));
+                if(window.saveDataToCloud) {
+                    window.saveDataToCloud({
+                        date: new Date().toISOString().split('T')[0],
+                        emp: currentSessionData.empName,
+                        handler: handler,
+                        stage: config.stageName,
+                        lastNote: document.getElementById('current-notes').value || '無備註',
+                        result: config.result || config.title,
+                        outcomeType: config.outcomeType,
+                        draftStepKey: null,
+                        draftSessionData: null
+                    });
+                }
+            } else {
+                // In Process
+                document.getElementById('reset-area').classList.add('hidden');
+                
+                // 1. Next Step Buttons
+                config.next.forEach(btn => {
+                    const b = document.createElement('button');
+                    b.textContent = btn.label;
+                    b.className = btn.style === 'primary' || btn.style === 'success' ? 'w-full btn-primary mb-3 pl-6' : 'w-full btn-outline mb-3 bg-white pl-6';
+                    if (btn.style === 'success') b.classList.add('bg-green-600', 'hover:bg-green-700', 'border-transparent');
+                    b.onclick = () => {
+                        // Validation
+                        if (config.requireNote && !document.getElementById('current-notes').value.trim()) { alert(convertText('請輸入內容', currentLang)); return; }
+                        if (config.requireTime && !document.getElementById('meeting-time').value) { alert(convertText('請選擇時間', currentLang)); return; }
+                        
+                        // Save State
+                        const currentNote = document.getElementById('current-notes').value;
+                        if(targetKey === 'supervisor') currentSessionData.notes.supervisor = currentNote;
+                        if(targetKey === 'show_rex') currentSessionData.notes.showRex = currentNote;
+                        if(targetKey === 'yanling') currentSessionData.notes.yanling = currentNote;
+                        if(targetKey === 'retention_execution') currentSessionData.notes.retention = currentNote;
+                        if(targetKey === 'assistant') currentSessionData.meetingTime = document.getElementById('meeting-time').value;
+
+                        // Checkpoint Save (Silent)
+                        if(window.saveDataToCloud) {
+                            window.saveDraft(false);
+                        }
+                        transitionTo(btn.target);
+                    };
+                    actArea.appendChild(b);
+                });
+
+                // 2. Manual Save Button
+                if(targetKey !== 'start') {
+                    const saveBtn = document.createElement('button');
+                    saveBtn.innerHTML = `💾 ${convertText('暫存目前進度', currentLang)}`;
+                    saveBtn.className = 'w-full btn-save mb-3 pl-6';
+                    saveBtn.onclick = () => window.saveDraft(true);
+                    actArea.appendChild(saveBtn);
+                }
+
+                // 3. Back Button
+                if (config.prev) {
+                    const backBtn = document.createElement('button');
+                    backBtn.innerHTML = `⬅️ ${convertText('回上一步', currentLang)}`;
+                    backBtn.className = 'btn-back';
+                    backBtn.onclick = () => {
+                        window.saveDraft(false); // Silent Save
+                        transitionTo(config.prev);
+                    };
+                    actArea.appendChild(backBtn);
+                }
+                updateVisualFlow(config.visualStep, 'process');
+            }
+        }
+
+        function resetFlow() {
+            currentStepKey = 'start';
+            window.currentDraftId = null;
+            document.getElementById('emp-name').value = '';
+            document.getElementById('sup-name').value = '';
+            document.getElementById('input-area-start').classList.remove('hidden');
+            document.getElementById('input-area-notes').classList.add('hidden');
+            document.getElementById('input-area-meeting').classList.add('hidden');
+            document.getElementById('notes-history-area').classList.add('hidden');
+            document.getElementById('case-info').classList.add('hidden');
+            document.getElementById('draft-select').value = ""; 
+            currentSessionData = { empName: '', supName: '', meetingTime: '', notes: { supervisor: '', showRex: '', yanling: '', retention: '' } };
+            
+            const config = flowConfig['start'];
+            document.getElementById('step-title').textContent = config.title;
+            document.getElementById('step-desc').textContent = config.desc;
+            
+            const actArea = document.getElementById('action-area');
+            actArea.innerHTML = `
+                <div class="space-y-2">
+                    <button class="w-full btn-primary" onclick="validateAndStart()">
+                        <span class="mr-2">＋</span> ${convertText('建立案件並開始評估', currentLang)}
+                    </button>
+                    <button class="w-full btn-save" onclick="saveDraft()">
+                        <span class="mr-2">💾</span> ${convertText('暫存目前資料', currentLang)}
+                    </button>
+                </div>
+            `;
+            document.getElementById('reset-area').classList.add('hidden');
+            updateVisualFlow(0, 'reset');
+        }
+
+        function updateVisualFlow(stepIndex, type, resultText = '') {
+            const steps = [1, 2, 3, 4, 5];
+            const resultBox = document.getElementById('v-result');
+            steps.forEach(idx => {
+                const el = document.getElementById(`v-step-${idx}`);
+                if (!el) return;
+                el.className = 'step-node p-4 rounded-lg border border-gray-200 bg-gray-50 text-gray-400 flex items-center';
+                if(idx === 5) el.classList.toggle('hidden', !(stepIndex >= 5 || (type === 'process' && stepIndex === 4)));
+                
+                if (type !== 'reset') {
+                    if (idx === stepIndex && type === 'process') {
+                         el.classList.remove('border-gray-200', 'bg-gray-50', 'text-gray-400');
+                         el.classList.add('border-blue-500', 'bg-blue-50', 'text-blue-800', 'shadow-md');
+                    } else if (idx < stepIndex || type !== 'process') {
+                         el.classList.remove('border-gray-200', 'bg-gray-50', 'text-gray-400');
+                         el.classList.add('border-blue-200', 'bg-white', 'text-gray-600');
+                    }
+                }
+            });
+            resultBox.classList.add('hidden');
+            
+            if (type === 'neutral' || type === 'success') {
+                resultBox.classList.remove('hidden');
+                resultBox.className = type === 'success' ? 'mt-8 p-6 rounded-lg text-center w-full border-2 border-dashed bg-green-50 border-green-200 text-green-800' : 'mt-8 p-6 rounded-lg text-center w-full border-2 border-dashed bg-gray-100 border-gray-300 text-gray-600';
+                document.getElementById('result-title').textContent = resultText;
+                document.getElementById('result-icon').textContent = type === 'success' ? '🎉' : '🚪';
+                const summaryDiv = document.getElementById('final-summary-content');
+                let html = '';
+                const notes = currentSessionData.notes;
+                if(notes.supervisor) html += `<div class="bg-white p-2 rounded border border-gray-100 mb-2"><div class="text-xs font-bold text-gray-500">${convertText('直屬主管:', currentLang)}</div> <div class="text-gray-700">${notes.supervisor}</div></div>`;
+                if(notes.showRex) html += `<div class="bg-white p-2 rounded border border-gray-100 mb-2"><div class="text-xs font-bold text-gray-500">Show/Rex:</div> <div class="text-gray-700">${notes.showRex}</div></div>`;
+                if(currentSessionData.meetingTime) html += `<div class="bg-white p-2 rounded border border-gray-100 mb-2"><div class="text-xs font-bold text-gray-500">${convertText('Sammy 會議:', currentLang)}</div> <div class="text-blue-600 font-medium">${currentSessionData.meetingTime.replace('T', ' ')}</div></div>`;
+                if(notes.yanling) html += `<div class="bg-white p-2 rounded border border-gray-100 mb-2"><div class="text-xs font-bold text-gray-500">${convertText('彥靈總:', currentLang)}</div> <div class="text-gray-700">${notes.yanling}</div></div>`;
+                if(notes.retention) html += `<div class="bg-blue-50 p-2 rounded border border-blue-100 mb-2"><div class="text-xs font-bold text-blue-600">${convertText('留才方案:', currentLang)}</div> <div class="text-gray-800 font-medium">${notes.retention}</div></div>`;
+                summaryDiv.innerHTML = html || convertText('無紀錄', currentLang);
+            }
+        }
+
+        window.updateDraftSelector = function() {
+            const select = document.getElementById('draft-select');
+            const draftArea = document.getElementById('draft-resume-area');
+            if(!window.allRecords) return;
+            const drafts = window.allRecords.filter(r => r.outcomeType === 'draft');
+            if(drafts.length > 0) {
+                draftArea.classList.remove('hidden');
+                select.innerHTML = `<option value="">📂 ${convertText('載入未結案...', currentLang)} (${drafts.length})</option>` + 
+                    drafts.map(d => `<option value="${d.id}">${d.emp} - ${convertText(d.stage, currentLang)} (${d.date})</option>`).join('');
+            } else {
+                draftArea.classList.add('hidden');
+            }
+        };
+
+        window.renderRecordsTable = function() {
+            const tbody = document.getElementById('records-body');
+            // Show drafts AND completed
+            const data = window.allRecords || []; 
+            tbody.innerHTML = '';
+            if (data.length === 0) {
+                tbody.innerHTML = `<tr class="text-gray-400 text-sm text-center"><td colspan="6" class="py-4">${convertText('尚無紀錄', currentLang)}</td></tr>`;
+                return;
+            }
+            data.forEach((rec, idx) => {
+                let statusClass = 'text-gray-600';
+                let rowClass = 'border-b';
+                let actionBtn = '';
+                
+                if(rec.outcomeType === 'draft') {
+                    statusClass = 'text-amber-600 font-bold bg-amber-50 px-2 py-1 rounded';
+                    rowClass = 'border-b bg-amber-50 animate-flash';
+                    actionBtn = `<button onclick="safeLoadDraft('${rec.id}')" class="text-amber-700 hover:text-amber-900 text-xs border border-amber-300 bg-white px-2 py-1 rounded shadow-sm">📂 ${convertText('繼續編輯', currentLang)}</button>`;
+                } else if(rec.outcomeType === 'retain') {
+                    statusClass = 'text-green-800 font-bold bg-green-100 px-2 py-1 rounded';
+                }
+
+                tbody.innerHTML += `
+                    <tr class="${rowClass}">
+                        <td class="px-6 py-4 text-sm text-gray-500">${rec.date}</td>
+                        <td class="px-6 py-4 font-medium text-gray-900">${rec.emp}</td>
+                        <td class="px-6 py-4 text-sm text-gray-500">${rec.handler}</td>
+                        <td class="px-6 py-4 text-sm text-gray-500">${convertText(rec.stage, currentLang)}</td>
+                        <td class="px-6 py-4 text-sm"><span class="${statusClass}">${convertText(rec.result, currentLang)}</span></td>
+                        <td class="px-6 py-4">${actionBtn}</td>
+                    </tr>`;
+            });
+        };
+
+        window.renderAdminTable = function() {
+            if (!isAdminLoggedIn) return;
+            const tbody = document.getElementById('admin-table-body');
+            const data = window.allRecords || []; 
+            tbody.innerHTML = '';
+            if (data.length === 0) {
+                tbody.innerHTML = `<tr class="text-gray-400 text-center"><td colspan="7" class="py-4">${convertText('目前無案件紀錄', currentLang)}</td></tr>`;
+                return;
+            }
+            data.forEach((rec, index) => {
+                let statusColor = 'text-gray-500';
+                if(rec.outcomeType === 'retain') statusColor = 'text-green-600 font-bold';
+                if(rec.outcomeType === 'draft') statusColor = 'text-amber-500 font-bold'; 
+                tbody.innerHTML += `<tr><td class="px-4 py-3 text-gray-500">${rec.date}</td><td class="px-4 py-3 font-medium text-gray-900">${rec.emp}</td><td class="px-4 py-3 text-gray-500">${rec.handler}</td><td class="px-4 py-3 text-gray-500">${convertText(rec.stage, currentLang)}</td><td class="px-4 py-3 text-gray-500 max-w-xs truncate">${rec.lastNote}</td><td class="px-4 py-3 ${statusColor}">${convertText(rec.result, currentLang)}</td><td class="px-4 py-3 space-x-2"><button onclick="openEditModal('${rec.id}', ${index})" class="text-blue-600 hover:text-blue-800 text-xs border border-blue-200 px-2 py-1 rounded">${convertText('編輯', currentLang)}</button></td></tr>`;
+            });
+        };
+
+        const CREDENTIALS = { user: 'skykyo520', pass: 'zZ22633502' };
+        let isAdminLoggedIn = false;
+        window.checkAdminLogin = () => { if (document.getElementById('admin-user').value === CREDENTIALS.user && document.getElementById('admin-pass').value === CREDENTIALS.pass) { isAdminLoggedIn = true; document.getElementById('admin-login').classList.add('hidden'); document.getElementById('admin-dashboard').classList.remove('hidden'); renderAdminTable(); } else document.getElementById('login-error').classList.remove('hidden'); };
+        window.logoutAdmin = () => { isAdminLoggedIn = false; document.getElementById('admin-login').classList.remove('hidden'); document.getElementById('admin-dashboard').classList.add('hidden'); document.getElementById('admin-user').value=''; document.getElementById('admin-pass').value=''; };
+        window.openEditModal = (id, idx) => { const r = window.allRecords[idx]; document.getElementById('edit-id').value = id; document.getElementById('edit-date').value = r.date; document.getElementById('edit-emp').value = r.emp; document.getElementById('edit-handler').value = r.handler; document.getElementById('edit-note').value = r.lastNote; let v='exit'; if(r.outcomeType==='retain')v='success'; if(r.result.includes('失敗')||r.result.includes('失败'))v='fail'; if(r.outcomeType==='draft')v='draft'; document.getElementById('edit-result').value = v; document.getElementById('edit-modal').classList.remove('hidden'); };
+        window.closeEditModal = () => document.getElementById('edit-modal').classList.add('hidden');
+        window.saveEdit = () => { 
+            const id = document.getElementById('edit-id').value;
+            const resType = document.getElementById('edit-result').value;
+            let resText = convertText(resType === 'success' ? '成功留任' : (resType === 'fail' ? '留才失敗 (仍離職)' : (resType==='draft'?'進行中 (Draft)':'正常離職')), currentLang);
+            const data = { date: document.getElementById('edit-date').value, emp: document.getElementById('edit-emp').value, handler: document.getElementById('edit-handler').value, lastNote: document.getElementById('edit-note').value, outcomeType: resType === 'success' ? 'retain' : (resType==='draft'?'draft':'exit'), result: resText };
+            if(window.updateDataInCloud) window.updateDataInCloud(id, data);
+            closeEditModal(); 
+        };
+        window.deleteRecordFromModal = () => {
+            if(confirm(convertText('確定要刪除此筆紀錄嗎？此動作無法復原。', currentLang))) {
+                if(window.deleteDataInCloud) window.deleteDataInCloud(document.getElementById('edit-id').value);
+                closeEditModal();
+            }
+        };
+        window.exportToCSV = () => { const data = window.allRecords; if(!data.length){ alert('No Data'); return; } let c = "\ufeff" + ['日期','人員','處理人','階段','備註','結果'].map(h=>convertText(h,currentLang)).join(',') + "\n"; data.forEach(r => c += [r.date, r.emp, r.handler, r.stage, `"${r.lastNote.replace(/"/g,'""')}"`, r.result].join(',') + "\n"); const b = new Blob([c],{type:"text/csv;charset=utf-8;"}); const l = document.createElement("a"); l.href = URL.createObjectURL(b); l.download = `report_${new Date().toISOString().slice(0,10)}.csv`; l.click(); };
+        window.exportDataJSON = () => { const data = window.allRecords; if(!data.length)return; const b = new Blob([JSON.stringify(data,null,2)],{type:"application/json"}); const l = document.createElement("a"); l.href = URL.createObjectURL(b); l.download = `backup_${new Date().toISOString().slice(0,10)}.json`; l.click(); };
+        window.importDataJSON = (input) => { const f = input.files[0]; if(!f) return; const r = new FileReader(); r.onload = async (e) => { try { const d = JSON.parse(e.target.result); if(Array.isArray(d) && confirm(convertText('確定要匯入備份嗎？', currentLang))) { const c = await window.batchUpload(d); alert(`成功匯入 ${c} 筆資料`); } } catch(err){ alert('Error'); } input.value=''; }; r.readAsText(f); };
+        window.downloadSOPImage = () => { 
+            const el = document.querySelector('#sop-tree-container'); const btn = document.getElementById('btn-download-sop'); const txt = btn.innerHTML; btn.innerHTML = '...'; btn.disabled = true;
+            const orig = { w: el.style.width, h: el.style.height, ov: el.style.overflow, mw: el.style.minWidth };
+            el.style.width = 'max-content'; el.style.height = 'auto'; el.style.overflow = 'visible'; el.style.minWidth = '0';
+            setTimeout(() => {
+                html2canvas(el, { scale: 2, useCORS: true, scrollX:0, scrollY: -window.scrollY, windowWidth: document.documentElement.offsetWidth }).then(c => {
+                    const l = document.createElement('a'); l.download = `SOP_${new Date().toISOString().slice(0,10)}.png`; l.href = c.toDataURL(); l.click();
+                    Object.assign(el.style, orig); btn.innerHTML = txt; btn.disabled = false;
+                }).catch(() => { Object.assign(el.style, orig); btn.innerHTML = txt; btn.disabled = false; });
+            }, 100);
+        };
+    </script>
+
+    <!-- Firebase Module -->
+    <script type="module">
+        import { initializeApp } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-app.js";
+        import { getAuth, signInAnonymously, onAuthStateChanged, signInWithCustomToken } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-auth.js";
+        import { getFirestore, collection, addDoc, onSnapshot, doc, updateDoc, deleteDoc, query, orderBy, setDoc } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js";
+
+        const firebaseConfig = {
+            apiKey: "YOUR_API_KEY",
+            authDomain: "YOUR_PROJECT_ID.firebaseapp.com",
+            projectId: "YOUR_PROJECT_ID",
+            storageBucket: "YOUR_PROJECT_ID.appspot.com",
+            messagingSenderId: "YOUR_SENDER_ID",
+            appId: "YOUR_APP_ID"
+        };
+        // 為了在沒有變數的情況下不報錯，這裡做一個防呆
+        // 實際部署時請務必填寫上方 config
+        
+        // 注意：GitHub Pages 部署時，以下這行必須修改
+        // const firebaseConfig = JSON.parse(__firebase_config); 
+        
+        // 在此環境下為了模擬，我們還是會嘗試讀取變數，但會加上 try-catch
+        let finalConfig = firebaseConfig;
+        try {
+            if(typeof __firebase_config !== 'undefined') {
+                finalConfig = JSON.parse(__firebase_config);
+            }
+        } catch(e) {
+            console.log("Using placeholder config");
+        }
+
+        const app = initializeApp(finalConfig);
+        const auth = getAuth(app);
+        const db = getFirestore(app);
+        // GitHub 部署時請自定義一個 ID，例如 'my-company-app'
+        const appId = typeof __app_id !== 'undefined' ? __app_id : 'resignation-app-v1';
+        
+        let currentUser = null;
+
+        async function initAuth() {
+            try {
+                if (typeof __initial_auth_token !== 'undefined' && __initial_auth_token) {
+                    await signInWithCustomToken(auth, __initial_auth_token);
+                } else {
+                    await signInAnonymously(auth);
+                }
+            } catch (error) { console.error("Auth Failed", error); }
+        }
+        initAuth();
+
+        onAuthStateChanged(auth, (user) => {
+            if (user) {
+                currentUser = user;
+                subscribeToData();
+            }
+        });
+
+        function subscribeToData() {
+            if (!currentUser) return;
+            const q = collection(db, 'artifacts', appId, 'users', currentUser.uid, 'resignation_records');
+            onSnapshot(q, (snapshot) => {
+                const data = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
+                window.allRecords = data.sort((a, b) => new Date(b.date) - new Date(a.date));
+                
+                if(window.renderRecordsTable) window.renderRecordsTable();
+                if(window.renderAdminTable) window.renderAdminTable();
+                if(window.updateCharts) window.updateCharts();
+                if(window.updateDraftSelector) window.updateDraftSelector();
+            });
+        }
+
+        // Expose Firebase functions
+        window.saveDataToCloud = async (record, isDraft = false, showAlert = true) => {
+            if (!currentUser) { if(showAlert) alert("尚未連線到資料庫"); return; }
+            try {
+                if (window.currentDraftId) {
+                    const docRef = doc(db, 'artifacts', appId, 'users', currentUser.uid, 'resignation_records', window.currentDraftId);
+                    await updateDoc(docRef, record);
+                    if(showAlert) alert(isDraft ? "✅ 進度已暫存！" : "案件已更新並結案！");
+                } else {
+                    const ref = await addDoc(collection(db, 'artifacts', appId, 'users', currentUser.uid, 'resignation_records'), record);
+                    if(isDraft) window.currentDraftId = ref.id;
+                    if(showAlert) alert(isDraft ? "✅ 新案件已暫存！" : "案件已建立！");
+                }
+            } catch (e) { 
+                console.error("Save Error", e); 
+                if(showAlert) alert("❌ 儲存失敗: " + e.message); 
+            }
+        };
+
+        window.updateDataInCloud = async (id, updatedData) => {
+            if (!currentUser) return;
+            const docRef = doc(db, 'artifacts', appId, 'users', currentUser.uid, 'resignation_records', id);
+            try { await updateDoc(docRef, updatedData); alert("✅ 更新成功"); } catch (e) { alert("❌ 更新失敗"); }
+        };
+
+        window.deleteDataInCloud = async (id) => {
+            if (!currentUser) return;
+            const docRef = doc(db, 'artifacts', appId, 'users', currentUser.uid, 'resignation_records', id);
+            try { await deleteDoc(docRef); alert("🗑️ 資料已刪除"); } catch (e) { alert("❌ 刪除失敗"); }
+        };
+        
+        window.batchUpload = async (records) => {
+            if (!currentUser) return;
+            let count = 0;
+            for (const rec of records) {
+                const { id, ...data } = rec; 
+                await addDoc(collection(db, 'artifacts', appId, 'users', currentUser.uid, 'resignation_records'), data);
+                count++;
+            }
+            return count;
+        }
+    </script>
+</body>
+</html>
