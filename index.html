@@ -47,6 +47,8 @@
         .flow-label { @apply absolute bg-white px-2 py-0.5 text-xs font-bold text-gray-500 border border-gray-200 rounded-full shadow-sm; top: -12px; left: 50%; transform: translateX(-50%); z-index: 20; }
         .note-card { @apply bg-blue-50 border-l-4 border-blue-500 p-3 text-sm text-gray-700 mb-3; }
         .modal-overlay { background-color: rgba(0, 0, 0, 0.5); backdrop-filter: blur(2px); }
+        .draft-badge { @apply text-xs font-bold text-amber-800 bg-amber-100 border border-amber-300 px-2 py-1 rounded-full inline-flex items-center gap-1; }
+        .draft-badge.hidden { display: none; }
         
         /* Animations */
         .animate-flash { animation: flash 1s; }
@@ -66,6 +68,7 @@
                         <span class="w-2 h-2 bg-green-500 rounded-full mr-1 animate-pulse"></span> 
                         Github Deployment Version
                     </span>
+                    <span class="text-xs text-gray-500 font-medium">版本：<span id="app-version-tag">載入中</span></span>
                 </div>
             </div>
             <nav class="hidden md:flex space-x-4 text-sm font-medium text-gray-600 items-center">
@@ -100,17 +103,14 @@
                     <div id="step-display" class="p-6 h-full flex flex-col justify-between">
                         <div>
                             <div class="flex items-center justify-between mb-4">
-                                <div class="flex items-center space-x-2 text-blue-600 font-semibold text-xs uppercase tracking-wider">
-                                    <span id="current-stage-icon">📂</span>
-                                    <span id="current-stage-label">案件建立</span>
-                                </div>
-                                <!-- Draft Selector (Quick Access) -->
-                                <div id="draft-resume-area" class="w-1/2 hidden">
-                                    <select id="draft-select" onchange="safeLoadDraft(this.value)" class="select-field text-xs py-1 border-amber-300 bg-amber-50 font-bold text-amber-700 cursor-pointer">
-                                        <option value="">📂 載入暫存 (Drafts)...</option>
-                                        <!-- Populated via JS -->
-                                    </select>
-                                </div>
+            <div class="flex items-center space-x-2 text-blue-600 font-semibold text-xs uppercase tracking-wider">
+                                <span id="current-stage-icon">📂</span>
+                                <span id="current-stage-label">案件建立</span>
+                            </div>
+                            <div id="draft-status" class="draft-badge hidden">
+                                <span>✏️</span>
+                                <span id="draft-status-text">編輯草稿中</span>
+                            </div>
                             </div>
 
                             <h4 id="step-title" class="text-xl font-bold text-gray-900 mb-2">建立新離職案件</h4>
@@ -240,6 +240,53 @@
             </div>
         </section>
 
+        <!-- Analytics Dashboard -->
+        <section id="analytics" class="max-w-7xl mx-auto mb-12 bg-white rounded-lg shadow-sm border border-gray-200">
+            <div class="p-6 border-b border-gray-200 flex flex-col md:flex-row md:items-center md:justify-between gap-4">
+                <div>
+                    <h3 class="text-lg font-bold text-gray-800">數據看板</h3>
+                    <p class="text-sm text-gray-500 mt-1">即時追蹤留才成功率、草稿數與各階段案件量</p>
+                </div>
+                <div class="grid grid-cols-1 sm:grid-cols-3 gap-3 w-full md:w-auto">
+                    <div class="bg-blue-50 border border-blue-100 rounded-lg px-4 py-3 text-sm">
+                        <div class="text-blue-600 font-bold text-xs uppercase">總案件數</div>
+                        <div id="stat-total-cases" class="text-2xl font-extrabold text-blue-800 mt-1">0</div>
+                        <div class="text-xs text-blue-600 mt-1">含草稿、結案紀錄</div>
+                    </div>
+                    <div class="bg-amber-50 border border-amber-100 rounded-lg px-4 py-3 text-sm">
+                        <div class="text-amber-600 font-bold text-xs uppercase">草稿 / 進行中</div>
+                        <div id="stat-draft-cases" class="text-2xl font-extrabold text-amber-800 mt-1">0</div>
+                        <div class="text-xs text-amber-600 mt-1">尚未結案的案件</div>
+                    </div>
+                    <div class="bg-green-50 border border-green-100 rounded-lg px-4 py-3 text-sm">
+                        <div class="text-green-600 font-bold text-xs uppercase">留才成功率</div>
+                        <div id="stat-success-rate" class="text-2xl font-extrabold text-green-800 mt-1">0%</div>
+                        <div class="text-xs text-green-600 mt-1">成功留任 / 已結案</div>
+                    </div>
+                </div>
+            </div>
+            <div class="p-6 grid grid-cols-1 lg:grid-cols-2 gap-6">
+                <div class="bg-gray-50 border border-gray-200 rounded-lg p-4">
+                    <div class="flex items-center justify-between mb-3">
+                        <h4 class="font-bold text-gray-800 text-sm">留才 / 離職 / 草稿分布</h4>
+                        <span class="text-xs text-gray-500">案件結果總覽</span>
+                    </div>
+                    <div class="chart-container">
+                        <canvas id="chart-outcome"></canvas>
+                    </div>
+                </div>
+                <div class="bg-gray-50 border border-gray-200 rounded-lg p-4">
+                    <div class="flex items-center justify-between mb-3">
+                        <h4 class="font-bold text-gray-800 text-sm">各階段案件量</h4>
+                        <span class="text-xs text-gray-500">含進行中與結案紀錄</span>
+                    </div>
+                    <div class="chart-container">
+                        <canvas id="chart-stage"></canvas>
+                    </div>
+                </div>
+            </div>
+        </section>
+
         <!-- Process Flowchart Section (SOP) -->
         <section id="process-map" class="max-w-7xl mx-auto mb-12 py-8 border-t border-gray-200">
             <div class="flex flex-col md:flex-row justify-center items-center mb-8 relative">
@@ -340,9 +387,6 @@
                     <div class="flex justify-between items-center mb-6 border-b border-gray-600 pb-4">
                         <h4 class="text-lg font-bold">所有面談紀錄總覽</h4>
                         <div class="flex gap-2">
-                             <input type="file" id="json-import" accept=".json" class="hidden" onchange="importDataJSON(this)">
-                             <button onclick="document.getElementById('json-import').click()" class="bg-amber-600 hover:bg-amber-700 text-white text-sm px-4 py-2 rounded flex items-center shadow-lg"><span>🔄</span> <span class="ml-2">匯入備份 (上傳至雲端)</span></button>
-                             <button onclick="exportDataJSON()" class="bg-blue-600 hover:bg-blue-700 text-white text-sm px-4 py-2 rounded flex items-center shadow-lg"><span>💾</span> <span class="ml-2">備份 (JSON)</span></button>
                              <button onclick="exportToCSV()" class="bg-green-600 hover:bg-green-700 text-white text-sm px-4 py-2 rounded flex items-center shadow-lg"><span>📥</span> <span class="ml-2">下載報表 (CSV)</span></button>
                             <button onclick="logoutAdmin()" class="border border-gray-500 text-gray-300 text-xs px-3 py-2 rounded hover:bg-gray-700 ml-2">登出</button>
                         </div>
@@ -395,6 +439,9 @@
 
     <!-- Standard Script Block -->
     <script>
+        // Versioning
+        const APP_VERSION = 'v1.0.4';
+
         // Global State
         window.allRecords = []; 
         let currentSessionData = { empName: '', supName: '', meetingTime: '', notes: { supervisor: '', showRex: '', yanling: '', retention: '' } };
@@ -403,6 +450,97 @@
         let outcomeChartInstance = null;
         let currentLang = 'zh-TW';
         window.currentDraftId = null;
+
+        function isPlaceholderFirebaseConfig(cfg) {
+            return !cfg.apiKey || cfg.apiKey.startsWith('YOUR_') || !cfg.projectId || cfg.projectId.includes('YOUR_PROJECT_ID');
+        }
+        function setAllRecords(newRecords) {
+            window.allRecords = (newRecords || []).sort((a, b) => new Date(b.date) - new Date(a.date));
+            if(window.renderRecordsTable) window.renderRecordsTable();
+            if(window.renderAdminTable) window.renderAdminTable();
+            if(window.updateCharts) window.updateCharts();
+        }
+
+        function summarizeRecords(records = []) {
+            const total = records.length;
+            const drafts = records.filter(r => r.outcomeType === 'draft').length;
+            const retain = records.filter(r => r.outcomeType === 'retain').length;
+            const exit = records.filter(r => r.outcomeType !== 'retain' && r.outcomeType !== 'draft').length;
+            const closed = retain + exit;
+            const successRate = closed ? Math.round((retain / closed) * 100) : 0;
+            const stageMap = {};
+            records.forEach(r => {
+                const key = r.stage || '未標示階段';
+                stageMap[key] = (stageMap[key] || 0) + 1;
+            });
+            return { total, drafts, retain, exit, closed, successRate, stageMap };
+        }
+
+        function updateAnalyticsCards(stats) {
+            const totalEl = document.getElementById('stat-total-cases');
+            const draftEl = document.getElementById('stat-draft-cases');
+            const successEl = document.getElementById('stat-success-rate');
+            if(totalEl) totalEl.textContent = stats.total;
+            if(draftEl) draftEl.textContent = stats.drafts;
+            if(successEl) successEl.textContent = `${stats.successRate}%`;
+        }
+
+        function renderOutcomeChart(stats) {
+            const canvas = document.getElementById('chart-outcome');
+            if(!canvas || typeof Chart === 'undefined') return;
+            const ctx = canvas.getContext('2d');
+            if(outcomeChartInstance) outcomeChartInstance.destroy();
+            outcomeChartInstance = new Chart(ctx, {
+                type: 'doughnut',
+                data: {
+                    labels: [
+                        convertText('成功留任', currentLang),
+                        convertText('正常離職/其他', currentLang),
+                        convertText('進行中 (Draft)', currentLang)
+                    ],
+                    datasets: [{
+                        data: [stats.retain, stats.exit, stats.drafts],
+                        backgroundColor: ['#16a34a', '#94a3b8', '#fbbf24']
+                    }]
+                },
+                options: {
+                    plugins: { legend: { position: 'bottom' } }
+                }
+            });
+        }
+
+        function renderStageChart(stats) {
+            const canvas = document.getElementById('chart-stage');
+            if(!canvas || typeof Chart === 'undefined') return;
+            const ctx = canvas.getContext('2d');
+            const entries = Object.entries(stats.stageMap || {}).sort((a,b) => b[1]-a[1]);
+            const labels = entries.map(e => convertText(e[0], currentLang));
+            const values = entries.map(e => e[1]);
+            if(retentionChartInstance) retentionChartInstance.destroy();
+            retentionChartInstance = new Chart(ctx, {
+                type: 'bar',
+                data: {
+                    labels,
+                    datasets: [{
+                        label: convertText('案件數', currentLang),
+                        data: values,
+                        backgroundColor: '#60a5fa'
+                    }]
+                },
+                options: {
+                    indexAxis: 'y',
+                    scales: { x: { beginAtZero: true, ticks: { precision:0 } } },
+                    plugins: { legend: { display: false } }
+                }
+            });
+        }
+
+        window.updateCharts = function() {
+            const stats = summarizeRecords(window.allRecords || []);
+            updateAnalyticsCards(stats);
+            renderOutcomeChart(stats);
+            renderStageChart(stats);
+        };
 
         // Flow Configuration
         const flowConfig = {
@@ -419,51 +557,89 @@
             final_fail: { title: '結案：留才失敗 (仍離職)', desc: '雖經留才程序，員工仍決定離職。', icon: '🚪', isEnd: true, type: 'neutral', visualStep: 5, stageName: '留才確認', outcomeType: 'exit', result: '留才失敗 (仍離職)' }
         };
 
+        function syncCurrentStepInputs() {
+            const config = flowConfig[currentStepKey] || {};
+            if (config.requireNote) {
+                const note = (document.getElementById('current-notes').value || '').trim();
+                if(currentStepKey === 'supervisor') currentSessionData.notes.supervisor = note;
+                if(currentStepKey === 'show_rex') currentSessionData.notes.showRex = note;
+                if(currentStepKey === 'yanling') currentSessionData.notes.yanling = note;
+                if(currentStepKey === 'retention_execution') currentSessionData.notes.retention = note;
+            }
+            if (config.requireTime) {
+                currentSessionData.meetingTime = document.getElementById('meeting-time').value;
+            }
+        }
+
+        function deriveLastNoteForStep(stepKey) {
+            if(stepKey === 'assistant' && currentSessionData.meetingTime) {
+                return `會議時間: ${currentSessionData.meetingTime.replace('T', ' ')}`;
+            }
+            if(stepKey === 'supervisor') return currentSessionData.notes.supervisor || '暫存-主管評估';
+            if(stepKey === 'show_rex') return currentSessionData.notes.showRex || '暫存-Show/Rex';
+            if(stepKey === 'yanling') return currentSessionData.notes.yanling || '暫存-彥靈總';
+            if(stepKey === 'retention_execution') return currentSessionData.notes.retention || '暫存-留才方案';
+            return '手動暫存...';
+        }
+
+        function getOutcomeNote(stepKey) {
+            if(stepKey === 'exit_normal_sup') return currentSessionData.notes.supervisor || '無備註';
+            if(stepKey === 'exit_normal_rex') return currentSessionData.notes.showRex || '無備註';
+            if(stepKey === 'exit_normal_yan') return currentSessionData.notes.yanling || '無備註';
+            if(stepKey === 'final_success' || stepKey === 'final_fail' || stepKey === 'retention_execution') return currentSessionData.notes.retention || '無備註';
+            return deriveLastNoteForStep(stepKey);
+        }
+
+        function updateDraftStatusBadge(text) {
+            const badge = document.getElementById('draft-status');
+            const label = document.getElementById('draft-status-text');
+            if (!badge || !label) return;
+            if (!text) {
+                badge.classList.add('hidden');
+                label.textContent = '';
+                return;
+            }
+            label.textContent = text;
+            badge.classList.remove('hidden');
+        }
+
+        document.addEventListener('DOMContentLoaded', () => {
+            const versionTag = document.getElementById('app-version-tag');
+            if (versionTag) versionTag.textContent = APP_VERSION;
+            if (window.updateCharts) window.updateCharts();
+        });
+
         // --- CORE LOGIC: Save & Load ---
 
-        window.saveDraft = function() {
-            // Get Current Input
+        window.saveDraft = function(showAlert = true) {
             let emp = document.getElementById('emp-name').value.trim();
             let sup = document.getElementById('sup-name').value.trim();
-            
             if(!emp || !sup) {
                 alert("請至少輸入人員姓名與主管姓名才能暫存。");
                 return;
             }
 
-            // Sync Inputs
             currentSessionData.empName = emp;
             currentSessionData.supName = sup;
-            
-            if(currentStepKey !== 'start') {
-                const stepConfig = flowConfig[currentStepKey];
-                const currentNote = document.getElementById('current-notes').value;
-                if(stepConfig.requireNote) {
-                    if(currentStepKey === 'supervisor') currentSessionData.notes.supervisor = currentNote;
-                    else if(currentStepKey === 'show_rex') currentSessionData.notes.showRex = currentNote;
-                    else if(currentStepKey === 'yanling') currentSessionData.notes.yanling = currentNote;
-                    else if(currentStepKey === 'retention_execution') currentSessionData.notes.retention = currentNote;
-                }
-                if(stepConfig.requireTime) {
-                    currentSessionData.meetingTime = document.getElementById('meeting-time').value;
-                }
-            }
+            syncCurrentStepInputs();
 
+            const existing = window.allRecords.find(r => r.id === window.currentDraftId);
+            const lastNote = deriveLastNoteForStep(currentStepKey);
             const draftData = {
-                date: new Date().toISOString().split('T')[0],
+                date: existing?.date || new Date().toISOString().split('T')[0],
                 emp: currentSessionData.empName,
                 handler: currentSessionData.supName,
                 stage: flowConfig[currentStepKey]?.stageName || '案件建立',
-                lastNote: '手動暫存...',
+                lastNote,
                 result: '進行中 (Draft)',
                 outcomeType: 'draft',
                 draftStepKey: currentStepKey,
-                draftSessionData: currentSessionData
+                draftSessionData: JSON.parse(JSON.stringify(currentSessionData))
             };
             
-            // Call Database
             if(window.saveDataToCloud) {
-                window.saveDataToCloud(draftData, true, false); // Alert = Yes
+                window.saveDataToCloud(draftData, true, showAlert); 
+                updateDraftStatusBadge('草稿已暫存');
             } else {
                 alert("資料庫尚未連線，請稍候...");
             }
@@ -476,7 +652,8 @@
                 if(!record) { alert("找不到資料"); return; }
 
                 if(!confirm(`確定要載入 ${record.emp} 的進度嗎？目前未儲存的內容將會遺失。`)) {
-                    document.getElementById('draft-select').value = "";
+                const draftSelect = document.getElementById('draft-select'); 
+                if (draftSelect) draftSelect.value = ""; 
                     return;
                 }
 
@@ -509,7 +686,8 @@
                 currentSessionData = {
                     ...defaultData,
                     ...sourceData,
-                    notes: { ...defaultData.notes, ...(sourceData.notes || {}) }
+                    notes: { ...defaultData.notes, ...(sourceData.notes || {}) },
+                    meetingTime: sourceData.meetingTime || ''
                 };
 
                 // UI Update
@@ -517,6 +695,7 @@
                 document.getElementById('sup-name').value = currentSessionData.supName;
                 document.getElementById('v-emp-name').textContent = currentSessionData.empName;
                 document.getElementById('v-sup-name').textContent = currentSessionData.supName;
+                updateDraftStatusBadge(`編輯草稿：${currentSessionData.empName}`);
                 
                 if(stepKey !== 'start') {
                     document.getElementById('case-info').classList.remove('hidden');
@@ -545,15 +724,16 @@
             } catch(e) {
                 alert("載入錯誤: " + e.message);
             } finally {
-                document.getElementById('draft-select').value = "";
-            }
+                    const draftSelect = document.getElementById('draft-select');
+                    if (draftSelect) draftSelect.value = "";
+                }
         }
 
         // --- Standard UI Functions ---
         const t2sMap = {}; const s2tMap = {}; 
         "離:离,職:职,面:面,談:谈,與:与,留:留,評:评,估:估,管:管,理:理,系:系,統:统,正:正,式:式,作:作,業:业,版:版,案:案,件:件,處:处,歷:历,史:史,紀:纪,錄:录,數:数,據:据,看:看,板:板,標:标,準:准,後:后,台:台,繁:繁,简:简,鎖:锁,員:员,提:提,出:出,向:向,直:直,屬:属,主:主,優:优,秀:秀,人:人,才:才,是:是,啟:启,動:动,程:程,序:序,否:否,轉:转,常:常,階:阶,分:分,析:析,因:因,素:素,工:工,薪:薪,資:资,判:判,斷:断,需:需,彥:彦,靈:灵,總:总,行:行,政:政,會:会,議:议,時:时,間:间,協:协,調:調,最:最,終:终,決:决,策:策,核:核,准:准,方:方,予:予,結:结,已:已,中:中,連:连,線:线,建:建,立:立,新:新,請:请,輸:输,入:入,訊:讯,流:流,將:将,自:自,檔:档,姓:姓,名:名,全:全,本:本,重:重,點:点,必:必,填:填,詳:详,細:細,歸:歸,顯:顯,示:示,近:近,筆:筆,完:完,整:整,日:日,期:期,關:關,鍵:鍵,備:備,註:註,結:結,果:果,漏:漏,斗:斗,處:處,置:置,布:布,圖:圖,徑:徑,參:參,考:考,敏:敏,感:感,存:存,取:取,權:權,限:限,驗:驗,證:證,管:管,員:員,帳:帳,號:號,碼:碼,登:登,錯:錯,誤:誤,覽:覽,匯:匯,報:報,表:表,操:操,編:編,輯:輯,儲:儲,變:變,更:更,公:公,司:司,內:內,部:部,模:模,組:組,警:警,告:告,確:確,定:定,清:清,除:除,此:此,無:無,法:法,復:複,原:原,確:確,認:認,有:有,無:無,資:資,料:料,可:可,安:安,排:排,選:選,擇:擇,仍:仍,敗:敗,幅:幅,度:度,還:還,份:份,載:載,片:片,刪:刪,暫:暫,續:續,辦:辦".split(',').forEach(p => { const [t, s] = p.split(':'); t2sMap[t] = s; s2tMap[s] = t; });
         function convertText(text, toLang) { let res = ''; for (let c of text) res += toLang === 'zh-CN' ? (t2sMap[c] || c) : (s2tMap[c] || c); return res; }
-        window.toggleLanguage = () => { currentLang = currentLang === 'zh-TW' ? 'zh-CN' : 'zh-TW'; walkAndConvert(document.body); window.updateCharts(); window.renderRecordsTable(); window.renderAdminTable(); window.updateDraftSelector(); };
+        window.toggleLanguage = () => { currentLang = currentLang === 'zh-TW' ? 'zh-CN' : 'zh-TW'; walkAndConvert(document.body); window.updateCharts(); window.renderRecordsTable(); window.renderAdminTable(); };
         function walkAndConvert(node) { if(node.nodeType===3) node.nodeValue = convertText(node.nodeValue, currentLang); else { if(node.tagName==='INPUT'||node.tagName==='TEXTAREA') if(node.placeholder) node.placeholder = convertText(node.placeholder, currentLang); node.childNodes.forEach(walkAndConvert); } }
 
         function validateAndStart() {
@@ -563,6 +743,7 @@
             currentSessionData.empName = empName;
             currentSessionData.supName = supName;
             window.currentDraftId = null;
+            updateDraftStatusBadge(null);
             document.getElementById('v-emp-name').textContent = empName;
             document.getElementById('v-sup-name').textContent = supName;
             document.getElementById('case-info').classList.remove('hidden');
@@ -625,19 +806,22 @@
                 
                 // Auto Final Save
                 let handler = config.handlerKey === 'supName' ? currentSessionData.supName : (config.handlerKey === 'Show/Rex' ? 'Show/Rex' : (config.handlerKey === '彥靈總' ? '彥靈總' : 'HR/Admin'));
+                const lastNote = getOutcomeNote(targetKey);
                 if(window.saveDataToCloud) {
                     window.saveDataToCloud({
                         date: new Date().toISOString().split('T')[0],
                         emp: currentSessionData.empName,
                         handler: handler,
                         stage: config.stageName,
-                        lastNote: document.getElementById('current-notes').value || '無備註',
+                        lastNote,
                         result: config.result || config.title,
                         outcomeType: config.outcomeType,
                         draftStepKey: null,
                         draftSessionData: null
                     });
                 }
+                window.currentDraftId = null;
+                updateDraftStatusBadge(null);
             } else {
                 // In Process
                 document.getElementById('reset-area').classList.add('hidden');
@@ -652,14 +836,6 @@
                         // Validation
                         if (config.requireNote && !document.getElementById('current-notes').value.trim()) { alert(convertText('請輸入內容', currentLang)); return; }
                         if (config.requireTime && !document.getElementById('meeting-time').value) { alert(convertText('請選擇時間', currentLang)); return; }
-                        
-                        // Save State
-                        const currentNote = document.getElementById('current-notes').value;
-                        if(targetKey === 'supervisor') currentSessionData.notes.supervisor = currentNote;
-                        if(targetKey === 'show_rex') currentSessionData.notes.showRex = currentNote;
-                        if(targetKey === 'yanling') currentSessionData.notes.yanling = currentNote;
-                        if(targetKey === 'retention_execution') currentSessionData.notes.retention = currentNote;
-                        if(targetKey === 'assistant') currentSessionData.meetingTime = document.getElementById('meeting-time').value;
 
                         // Checkpoint Save (Silent)
                         if(window.saveDataToCloud) {
@@ -704,8 +880,10 @@
             document.getElementById('input-area-meeting').classList.add('hidden');
             document.getElementById('notes-history-area').classList.add('hidden');
             document.getElementById('case-info').classList.add('hidden');
-            document.getElementById('draft-select').value = ""; 
+            const draftSelect = document.getElementById('draft-select');
+            if (draftSelect) draftSelect.value = ""; 
             currentSessionData = { empName: '', supName: '', meetingTime: '', notes: { supervisor: '', showRex: '', yanling: '', retention: '' } };
+            updateDraftStatusBadge(null);
             
             const config = flowConfig['start'];
             document.getElementById('step-title').textContent = config.title;
@@ -763,20 +941,6 @@
                 summaryDiv.innerHTML = html || convertText('無紀錄', currentLang);
             }
         }
-
-        window.updateDraftSelector = function() {
-            const select = document.getElementById('draft-select');
-            const draftArea = document.getElementById('draft-resume-area');
-            if(!window.allRecords) return;
-            const drafts = window.allRecords.filter(r => r.outcomeType === 'draft');
-            if(drafts.length > 0) {
-                draftArea.classList.remove('hidden');
-                select.innerHTML = `<option value="">📂 ${convertText('載入未結案...', currentLang)} (${drafts.length})</option>` + 
-                    drafts.map(d => `<option value="${d.id}">${d.emp} - ${convertText(d.stage, currentLang)} (${d.date})</option>`).join('');
-            } else {
-                draftArea.classList.add('hidden');
-            }
-        };
 
         window.renderRecordsTable = function() {
             const tbody = document.getElementById('records-body');
@@ -849,9 +1013,20 @@
                 closeEditModal();
             }
         };
-        window.exportToCSV = () => { const data = window.allRecords; if(!data.length){ alert('No Data'); return; } let c = "\ufeff" + ['日期','人員','處理人','階段','備註','結果'].map(h=>convertText(h,currentLang)).join(',') + "\n"; data.forEach(r => c += [r.date, r.emp, r.handler, r.stage, `"${r.lastNote.replace(/"/g,'""')}"`, r.result].join(',') + "\n"); const b = new Blob([c],{type:"text/csv;charset=utf-8;"}); const l = document.createElement("a"); l.href = URL.createObjectURL(b); l.download = `report_${new Date().toISOString().slice(0,10)}.csv`; l.click(); };
-        window.exportDataJSON = () => { const data = window.allRecords; if(!data.length)return; const b = new Blob([JSON.stringify(data,null,2)],{type:"application/json"}); const l = document.createElement("a"); l.href = URL.createObjectURL(b); l.download = `backup_${new Date().toISOString().slice(0,10)}.json`; l.click(); };
-        window.importDataJSON = (input) => { const f = input.files[0]; if(!f) return; const r = new FileReader(); r.onload = async (e) => { try { const d = JSON.parse(e.target.result); if(Array.isArray(d) && confirm(convertText('確定要匯入備份嗎？', currentLang))) { const c = await window.batchUpload(d); alert(`成功匯入 ${c} 筆資料`); } } catch(err){ alert('Error'); } input.value=''; }; r.readAsText(f); };
+        window.exportToCSV = () => { 
+            const data = window.allRecords || []; 
+            if(!data.length){ alert('No Data'); return; } 
+            let c = "\ufeff" + ['日期','人員','處理人','階段','備註','結果'].map(h=>convertText(h,currentLang)).join(',') + "\n"; 
+            data.forEach(r => { 
+                const safeNote = (r.lastNote || '').replace(/"/g,'""'); 
+                c += [r.date, r.emp, r.handler, r.stage, `"${safeNote}"`, r.result].join(',') + "\n"; 
+            }); 
+            const b = new Blob([c],{type:"text/csv;charset=utf-8;"}); 
+            const l = document.createElement("a"); 
+            l.href = URL.createObjectURL(b); 
+            l.download = `report_${new Date().toISOString().slice(0,10)}.csv`; 
+            l.click(); 
+        };
         window.downloadSOPImage = () => { 
             const el = document.querySelector('#sop-tree-container'); const btn = document.getElementById('btn-download-sop'); const txt = btn.innerHTML; btn.innerHTML = '...'; btn.disabled = true;
             const orig = { w: el.style.width, h: el.style.height, ov: el.style.overflow, mw: el.style.minWidth };
@@ -895,6 +1070,10 @@
             console.log("Using placeholder config");
         }
 
+        if (isPlaceholderFirebaseConfig(finalConfig)) {
+            alert('請設定 Firebase 參數，才能同步至雲端。');
+        }
+
         const app = initializeApp(finalConfig);
         const auth = getAuth(app);
         const db = getFirestore(app);
@@ -926,12 +1105,7 @@
             const q = collection(db, 'artifacts', appId, 'users', currentUser.uid, 'resignation_records');
             onSnapshot(q, (snapshot) => {
                 const data = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
-                window.allRecords = data.sort((a, b) => new Date(b.date) - new Date(a.date));
-                
-                if(window.renderRecordsTable) window.renderRecordsTable();
-                if(window.renderAdminTable) window.renderAdminTable();
-                if(window.updateCharts) window.updateCharts();
-                if(window.updateDraftSelector) window.updateDraftSelector();
+                setAllRecords(data);
             });
         }
 
@@ -967,7 +1141,7 @@
         };
         
         window.batchUpload = async (records) => {
-            if (!currentUser) return;
+            if (!currentUser) return 0;
             let count = 0;
             for (const rec of records) {
                 const { id, ...data } = rec; 
