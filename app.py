@@ -6,7 +6,7 @@
     print(APP_VERSION)
 """
 
-APP_VERSION = "v1.0.10"
+APP_VERSION = "v1.0.11"
 
 
 def get_version() -> str:
