@@ -431,7 +431,15 @@
                     <div><label class="block text-xs font-bold text-gray-500 mb-1">建檔日期</label><input type="date" id="edit-date" class="input-field bg-gray-100" readonly></div>
                     <div><label class="block text-xs font-bold text-gray-500 mb-1">離職人員</label><input type="text" id="edit-emp" class="input-field"></div>
                     <div><label class="block text-xs font-bold text-gray-500 mb-1">最後處理人</label><input type="text" id="edit-handler" class="input-field"></div>
-                    <div><label class="block text-xs font-bold text-gray-500 mb-1">備註紀錄</label><textarea id="edit-note" class="textarea-field"></textarea></div>
+                    <div><label class="block text-xs font-bold text-gray-500 mb-1">目前階段</label><input type="text" id="edit-stage" class="input-field" placeholder="如：留才確認 / 彥靈總 / 直屬主管"></div>
+                    <div class="grid grid-cols-1 gap-3 border border-gray-200 rounded-lg p-3 bg-gray-50">
+                        <div class="text-xs font-bold text-gray-600 mb-1">節點紀錄</div>
+                        <div><label class="block text-xs font-bold text-gray-500 mb-1">直屬主管</label><textarea id="edit-note-supervisor" class="textarea-field"></textarea></div>
+                        <div><label class="block text-xs font-bold text-gray-500 mb-1">Show/Rex</label><textarea id="edit-note-showrex" class="textarea-field"></textarea></div>
+                        <div><label class="block text-xs font-bold text-gray-500 mb-1">Sammy 會議時間</label><input type="datetime-local" id="edit-meeting-time" class="input-field"></div>
+                        <div><label class="block text-xs font-bold text-gray-500 mb-1">彥靈總</label><textarea id="edit-note-yanling" class="textarea-field"></textarea></div>
+                        <div><label class="block text-xs font-bold text-gray-500 mb-1">留才方案</label><textarea id="edit-note-retention" class="textarea-field"></textarea></div>
+                    </div>
                     <div><label class="block text-xs font-bold text-gray-500 mb-1">最終結果</label><select id="edit-result" class="input-field"><option value="success">成功留任</option><option value="fail">留才失敗 (仍離職)</option><option value="exit">正常離職</option><option value="draft">進行中 (Draft)</option></select></div>
                 </div>
                 <div class="bg-gray-50 px-6 py-4 flex justify-between items-center border-t border-gray-100">
@@ -448,7 +456,7 @@
     <!-- Standard Script Block -->
     <script>
         // Versioning
-        const APP_VERSION = 'v1.0.9';
+        const APP_VERSION = 'v1.0.10';
 
         // Global State
         window.allRecords = []; 
@@ -1157,23 +1165,53 @@
         let isAdminLoggedIn = false;
         window.checkAdminLogin = () => { if (document.getElementById('admin-user').value === CREDENTIALS.user && document.getElementById('admin-pass').value === CREDENTIALS.pass) { isAdminLoggedIn = true; document.getElementById('admin-login').classList.add('hidden'); document.getElementById('admin-dashboard').classList.remove('hidden'); renderAdminTable(); } else document.getElementById('login-error').classList.remove('hidden'); };
         window.logoutAdmin = () => { isAdminLoggedIn = false; document.getElementById('admin-login').classList.remove('hidden'); document.getElementById('admin-dashboard').classList.add('hidden'); document.getElementById('admin-user').value=''; document.getElementById('admin-pass').value=''; };
-        window.openEditModal = (id, idx) => { const r = window.allRecords[idx]; document.getElementById('edit-id').value = id; document.getElementById('edit-date').value = r.date; document.getElementById('edit-emp').value = r.emp; document.getElementById('edit-handler').value = r.handler; document.getElementById('edit-note').value = r.lastNote; let v='exit'; if(r.outcomeType==='retain')v='success'; if(r.result.includes('失敗')||r.result.includes('失败'))v='fail'; if(r.outcomeType==='draft')v='draft'; document.getElementById('edit-result').value = v; document.getElementById('edit-modal').classList.remove('hidden'); };
+        window.openEditModal = (id, idx) => { 
+            const r = window.allRecords[idx]; 
+            const history = r.history || r.draftSessionData || { notes: {} };
+            document.getElementById('edit-id').value = id; 
+            document.getElementById('edit-date').value = r.date; 
+            document.getElementById('edit-emp').value = r.emp; 
+            document.getElementById('edit-handler').value = r.handler; 
+            document.getElementById('edit-stage').value = r.stage || ''; 
+            document.getElementById('edit-note-supervisor').value = history.notes?.supervisor || ''; 
+            document.getElementById('edit-note-showrex').value = history.notes?.showRex || ''; 
+            document.getElementById('edit-meeting-time').value = history.meetingTime || ''; 
+            document.getElementById('edit-note-yanling').value = history.notes?.yanling || ''; 
+            document.getElementById('edit-note-retention').value = history.notes?.retention || ''; 
+            const lastNote = r.lastNote || '';
+            document.getElementById('edit-note').value = lastNote; 
+            let v='exit'; 
+            if(r.outcomeType==='retain')v='success'; 
+            if(r.result.includes('失敗')||r.result.includes('失败'))v='fail'; 
+            if(r.outcomeType==='draft')v='draft'; 
+            document.getElementById('edit-result').value = v; 
+            document.getElementById('edit-modal').classList.remove('hidden'); 
+        };
         window.closeEditModal = () => document.getElementById('edit-modal').classList.add('hidden');
         window.saveEdit = () => { 
             const id = document.getElementById('edit-id').value;
             const resType = document.getElementById('edit-result').value;
             let resText = convertText(resType === 'success' ? '成功留任' : (resType === 'fail' ? '留才失敗 (仍離職)' : (resType==='draft'?'進行中 (Draft)':'正常離職')), currentLang);
-            const existing = window.allRecords.find(r => r.id === id) || {};
+            const history = {
+                meetingTime: document.getElementById('edit-meeting-time').value || '',
+                notes: {
+                    supervisor: document.getElementById('edit-note-supervisor').value || '',
+                    showRex: document.getElementById('edit-note-showrex').value || '',
+                    yanling: document.getElementById('edit-note-yanling').value || '',
+                    retention: document.getElementById('edit-note-retention').value || ''
+                }
+            };
+            const finalNote = document.getElementById('edit-note').value || history.notes.retention || history.notes.yanling || history.notes.showRex || history.notes.supervisor || '';
             const data = { 
                 date: document.getElementById('edit-date').value, 
                 emp: document.getElementById('edit-emp').value, 
                 handler: document.getElementById('edit-handler').value, 
-                lastNote: document.getElementById('edit-note').value, 
+                stage: document.getElementById('edit-stage').value || '未標示階段',
+                lastNote: finalNote, 
                 outcomeType: resType === 'success' ? 'retain' : (resType==='draft'?'draft':'exit'), 
                 result: resText,
-                history: existing.history || existing.draftSessionData ? (existing.history || existing.draftSessionData) : undefined
+                history
             };
-            if(!data.history) delete data.history;
             if(window.updateDataInCloud) window.updateDataInCloud(id, data);
             closeEditModal(); 
         };
