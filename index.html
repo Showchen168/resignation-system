@@ -464,7 +464,7 @@
     <!-- Standard Script Block -->
     <script>
         // Versioning
-        const APP_VERSION = 'v1.0.11';
+        const APP_VERSION = 'v1.0.12';
 
         // Global State
         window.allRecords = []; 
@@ -1207,26 +1207,33 @@
         window.checkAdminLogin = () => { if (document.getElementById('admin-user').value === CREDENTIALS.user && document.getElementById('admin-pass').value === CREDENTIALS.pass) { isAdminLoggedIn = true; document.getElementById('admin-login').classList.add('hidden'); document.getElementById('admin-dashboard').classList.remove('hidden'); renderAdminTable(); } else document.getElementById('login-error').classList.remove('hidden'); };
         window.logoutAdmin = () => { isAdminLoggedIn = false; document.getElementById('admin-login').classList.remove('hidden'); document.getElementById('admin-dashboard').classList.add('hidden'); document.getElementById('admin-user').value=''; document.getElementById('admin-pass').value=''; };
         window.openEditModal = (id, idx) => { 
-            const r = window.allRecords[idx]; 
-            const history = r.history || r.draftSessionData || { notes: {} };
-            document.getElementById('edit-id').value = id; 
-            document.getElementById('edit-date').value = r.date; 
-            document.getElementById('edit-emp').value = r.emp; 
-            document.getElementById('edit-handler').value = r.handler; 
-            document.getElementById('edit-stage').value = r.stage || ''; 
-            document.getElementById('edit-note-supervisor').value = history.notes?.supervisor || ''; 
-            document.getElementById('edit-note-showrex').value = history.notes?.showRex || ''; 
-            document.getElementById('edit-meeting-time').value = history.meetingTime || ''; 
-            document.getElementById('edit-note-yanling').value = history.notes?.yanling || ''; 
-            document.getElementById('edit-note-retention').value = history.notes?.retention || ''; 
-            const lastNote = r.lastNote || '';
-            document.getElementById('edit-note').value = lastNote; 
-            let v='exit'; 
-            if(r.outcomeType==='retain')v='success'; 
-            if(r.result.includes('失敗')||r.result.includes('失败'))v='fail'; 
-            if(r.outcomeType==='draft')v='draft'; 
-            document.getElementById('edit-result').value = v; 
-            document.getElementById('edit-modal').classList.remove('hidden'); 
+            try {
+                const r = window.allRecords?.find(rec => rec.id === id) || window.allRecords?.[idx];
+                if(!r) { alert(convertText('找不到該筆紀錄', currentLang)); return; }
+                const history = r.history || r.draftSessionData || { notes: {} };
+                document.getElementById('edit-id').value = id; 
+                document.getElementById('edit-date').value = r.date || new Date().toISOString().slice(0,10); 
+                document.getElementById('edit-emp').value = r.emp || ''; 
+                document.getElementById('edit-handler').value = r.handler || ''; 
+                document.getElementById('edit-stage').value = r.stage || ''; 
+                document.getElementById('edit-note-supervisor').value = history.notes?.supervisor || ''; 
+                document.getElementById('edit-note-showrex').value = history.notes?.showRex || ''; 
+                document.getElementById('edit-meeting-time').value = history.meetingTime || ''; 
+                document.getElementById('edit-note-yanling').value = history.notes?.yanling || ''; 
+                document.getElementById('edit-note-retention').value = history.notes?.retention || ''; 
+                const lastNote = r.lastNote || '';
+                document.getElementById('edit-note').value = lastNote; 
+                let v='exit'; 
+                if(r.outcomeType==='retain')v='success'; 
+                if((r.result || '').includes('失敗')||(r.result || '').includes('失败'))v='fail'; 
+                if(r.outcomeType==='draft')v='draft'; 
+                document.getElementById('edit-result').value = v; 
+                document.getElementById('edit-modal').classList.remove('hidden'); 
+                document.getElementById('edit-modal').focus();
+            } catch (err) {
+                console.error('openEditModal error', err);
+                alert(convertText('開啟編輯時發生錯誤', currentLang));
+            }
         };
         window.closeEditModal = () => document.getElementById('edit-modal').classList.add('hidden');
         window.saveEdit = () => { 
