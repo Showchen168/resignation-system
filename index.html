@@ -440,7 +440,7 @@
     <!-- Standard Script Block -->
     <script>
         // Versioning
-        const APP_VERSION = 'v1.0.4';
+        const APP_VERSION = 'v1.0.5';
 
         // Global State
         window.allRecords = []; 
@@ -576,6 +576,8 @@
         let useLocalStorage = false;
         function setAllRecords(newRecords) {
             window.allRecords = (newRecords || []).sort((a, b) => new Date(b.date) - new Date(a.date));
+            // 為避免雲端中斷導致資料遺失，無論是否連線都保留最新本地備份
+            persistLocalRecords(window.allRecords);
             if(window.renderRecordsTable) window.renderRecordsTable();
             if(window.renderAdminTable) window.renderAdminTable();
             if(window.updateCharts) window.updateCharts();
@@ -593,6 +595,32 @@
         }
         function persistLocalRecords(records) {
             localStorage.setItem(LOCAL_STORAGE_KEY, JSON.stringify(records || []));
+        }
+        function generateLocalId() {
+            return (crypto?.randomUUID ? crypto.randomUUID() : `local-${Date.now()}-${Math.random().toString(16).slice(2)}`);
+        }
+        function initializeLocalMode(reason = '') {
+            useLocalStorage = true;
+            const fallback = loadLocalRecords();
+            setAllRecords(fallback);
+            if(reason) console.warn(`已切換離線備份模式：${reason}`);
+        }
+        function upsertLocalRecord(record, isDraft = false, showAlert = true) {
+            const records = loadLocalRecords();
+            const recordId = window.currentDraftId || record.id || generateLocalId();
+            const payload = { ...record, id: recordId };
+            const idx = records.findIndex(r => r.id === recordId);
+            if (idx >= 0) records[idx] = payload; else records.unshift(payload);
+            persistLocalRecords(records);
+            setAllRecords(records);
+            if (isDraft) window.currentDraftId = recordId;
+            if (showAlert) alert(isDraft ? "✅ 已暫存（離線備份）" : "✅ 已儲存（離線備份）");
+        }
+        function deleteLocalRecord(id, showAlert = true) {
+            const records = loadLocalRecords().filter(r => r.id !== id);
+            persistLocalRecords(records);
+            setAllRecords(records);
+            if (showAlert) alert("🗑️ 已刪除（離線備份）");
         }
 
         // Flow Configuration
@@ -659,6 +687,8 @@
         document.addEventListener('DOMContentLoaded', () => {
             const versionTag = document.getElementById('app-version-tag');
             if (versionTag) versionTag.textContent = APP_VERSION;
+            const localData = loadLocalRecords();
+            if (localData.length) setAllRecords(localData);
             if (window.updateCharts) window.updateCharts();
         });
 
@@ -1124,37 +1154,49 @@
         }
 
         if (isPlaceholderFirebaseConfig(finalConfig)) {
-            alert('請設定 Firebase 參數，才能同步至雲端。');
+            initializeLocalMode('缺少 Firebase 設定，改用瀏覽器離線儲存');
         }
 
-        const app = initializeApp(finalConfig);
-        const auth = getAuth(app);
-        const db = getFirestore(app);
-        // GitHub 部署時請自定義一個 ID，例如 'my-company-app'
+        let app, auth, db;
         const appId = typeof __app_id !== 'undefined' ? __app_id : 'resignation-app-v1';
-        
         let currentUser = null;
 
         async function initAuth() {
+            if (useLocalStorage) return;
             try {
                 if (typeof __initial_auth_token !== 'undefined' && __initial_auth_token) {
                     await signInWithCustomToken(auth, __initial_auth_token);
                 } else {
                     await signInAnonymously(auth);
                 }
-            } catch (error) { console.error("Auth Failed", error); }
-        }
-        initAuth();
-
-        onAuthStateChanged(auth, (user) => {
-            if (user) {
-                currentUser = user;
-                subscribeToData();
+            } catch (error) { 
+                console.error("Auth Failed", error); 
+                initializeLocalMode('Firebase 驗證失敗，改用離線備份');
             }
-        });
+        }
+
+        function bootstrapFirebase() {
+            if (useLocalStorage) return;
+            try {
+                app = initializeApp(finalConfig);
+                auth = getAuth(app);
+                db = getFirestore(app);
+                initAuth();
+                onAuthStateChanged(auth, (user) => {
+                    if (user) {
+                        currentUser = user;
+                        subscribeToData();
+                    }
+                });
+            } catch (e) {
+                console.error('Firebase 初始化失敗，改用離線備份模式', e);
+                initializeLocalMode('Firebase 初始化失敗');
+            }
+        }
+        bootstrapFirebase();
 
         function subscribeToData() {
-            if (!currentUser) return;
+            if (!currentUser || useLocalStorage) return;
             const q = collection(db, 'artifacts', appId, 'users', currentUser.uid, 'resignation_records');
             onSnapshot(q, (snapshot) => {
                 const data = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
@@ -1164,7 +1206,10 @@
 
         // Expose Firebase functions
         window.saveDataToCloud = async (record, isDraft = false, showAlert = true) => {
-            if (!currentUser) { if(showAlert) alert("尚未連線到資料庫"); return; }
+            if (useLocalStorage || !currentUser) {
+                if (!useLocalStorage && !currentUser) initializeLocalMode('尚未取得登入憑證，暫存於本機');
+                return upsertLocalRecord(record, isDraft, showAlert);
+            }
             try {
                 if (window.currentDraftId) {
                     const docRef = doc(db, 'artifacts', appId, 'users', currentUser.uid, 'resignation_records', window.currentDraftId);
@@ -1177,24 +1222,34 @@
                 }
             } catch (e) { 
                 console.error("Save Error", e); 
-                if(showAlert) alert("❌ 儲存失敗: " + e.message); 
+                initializeLocalMode('雲端儲存失敗，已改用本機暫存');
+                return upsertLocalRecord(record, isDraft, showAlert);
             }
         };
 
         window.updateDataInCloud = async (id, updatedData) => {
-            if (!currentUser) return;
+            if (useLocalStorage || !currentUser) {
+                if (!useLocalStorage && !currentUser) initializeLocalMode('尚未取得登入憑證，暫存於本機');
+                return upsertLocalRecord({ ...(loadLocalRecords().find(r => r.id === id) || {}), ...updatedData, id }, false, true);
+            }
             const docRef = doc(db, 'artifacts', appId, 'users', currentUser.uid, 'resignation_records', id);
             try { await updateDoc(docRef, updatedData); alert("✅ 更新成功"); } catch (e) { alert("❌ 更新失敗"); }
         };
 
         window.deleteDataInCloud = async (id) => {
-            if (!currentUser) return;
+            if (useLocalStorage || !currentUser) {
+                if (!useLocalStorage && !currentUser) initializeLocalMode('尚未取得登入憑證，暫存於本機');
+                return deleteLocalRecord(id, true);
+            }
             const docRef = doc(db, 'artifacts', appId, 'users', currentUser.uid, 'resignation_records', id);
             try { await deleteDoc(docRef); alert("🗑️ 資料已刪除"); } catch (e) { alert("❌ 刪除失敗"); }
         };
         
         window.batchUpload = async (records) => {
-            if (!currentUser) return 0;
+            if (useLocalStorage || !currentUser) {
+                records.forEach(r => upsertLocalRecord(r, false, false));
+                return records.length;
+            }
             let count = 0;
             for (const rec of records) {
                 const { id, ...data } = rec; 
