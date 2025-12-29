@@ -17,6 +17,7 @@
         .history-cell { @apply bg-gray-50 border border-gray-200 rounded-lg p-3 text-sm leading-relaxed max-h-32 overflow-y-auto shadow-inner; }
         .history-item { @apply mb-1; }
         .history-badge { @apply inline-block text-xs font-bold text-blue-700 bg-blue-50 border border-blue-200 rounded px-2 py-0.5; }
+        .modal-card { @apply max-h-[90vh] overflow-y-auto; }
         /* Buttons */
         .btn-primary { @apply bg-blue-700 text-white px-4 py-2 rounded hover:bg-blue-800 transition-colors duration-200 shadow-sm font-medium flex items-center justify-center; }
         .btn-save { @apply bg-amber-100 border border-amber-300 text-amber-800 px-4 py-2 rounded hover:bg-amber-200 transition-colors duration-200 font-medium flex items-center justify-center; }
@@ -439,7 +440,7 @@
 
         <!-- Edit Modal -->
         <div id="edit-modal" class="fixed inset-0 modal-overlay hidden z-[100] flex items-center justify-center p-4">
-            <div class="bg-white rounded-xl shadow-2xl w-full max-w-lg overflow-hidden">
+            <div class="bg-white rounded-xl shadow-2xl w-full max-w-lg overflow-hidden modal-card">
                 <div class="bg-gray-800 px-6 py-4 flex justify-between items-center">
                     <h3 class="text-white font-bold">編輯紀錄</h3>
                     <button onclick="closeEditModal()" class="text-gray-400 hover:text-white">✕</button>
@@ -476,7 +477,7 @@
     <!-- Standard Script Block -->
     <script>
         // Versioning
-        const APP_VERSION = 'v1.0.14';
+        const APP_VERSION = 'v1.0.15';
 
         // Global State
         window.allRecords = []; 
