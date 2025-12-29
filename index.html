@@ -407,7 +407,7 @@
     <!-- Standard Script Block -->
     <script>
         // Versioning
-        const APP_VERSION = 'v1.0.1';
+        const APP_VERSION = 'v1.0.2';
 
         // Global State
         window.allRecords = []; 
@@ -435,6 +435,31 @@
         let googleDriveReady = false;
         let googleDriveSignedIn = false;
         let googleAuthInstance = null;
+        function isPlaceholderFirebaseConfig(cfg) {
+            return !cfg.apiKey || cfg.apiKey.startsWith('YOUR_') || !cfg.projectId || cfg.projectId.includes('YOUR_PROJECT_ID');
+        }
+        const LOCAL_STORAGE_KEY = 'resignation_records_local';
+        let useLocalStorage = false;
+        function setAllRecords(newRecords) {
+            window.allRecords = (newRecords || []).sort((a, b) => new Date(b.date) - new Date(a.date));
+            if(window.renderRecordsTable) window.renderRecordsTable();
+            if(window.renderAdminTable) window.renderAdminTable();
+            if(window.updateCharts) window.updateCharts();
+            if(window.updateDraftSelector) window.updateDraftSelector();
+        }
+        function loadLocalRecords() {
+            try {
+                const raw = localStorage.getItem(LOCAL_STORAGE_KEY);
+                if(!raw) return [];
+                const data = JSON.parse(raw);
+                return Array.isArray(data) ? data : [];
+            } catch {
+                return [];
+            }
+        }
+        function persistLocalRecords(records) {
+            localStorage.setItem(LOCAL_STORAGE_KEY, JSON.stringify(records || []));
+        }
 
         // Flow Configuration
         const flowConfig = {
@@ -1063,15 +1088,22 @@
             console.log("Using placeholder config");
         }
 
-        const app = initializeApp(finalConfig);
-        const auth = getAuth(app);
-        const db = getFirestore(app);
+        useLocalStorage = isPlaceholderFirebaseConfig(finalConfig);
+
+        const app = useLocalStorage ? null : initializeApp(finalConfig);
+        const auth = useLocalStorage ? null : getAuth(app);
+        const db = useLocalStorage ? null : getFirestore(app);
         // GitHub 部署時請自定義一個 ID，例如 'my-company-app'
         const appId = typeof __app_id !== 'undefined' ? __app_id : 'resignation-app-v1';
         
         let currentUser = null;
 
         async function initAuth() {
+            if (useLocalStorage) {
+                currentUser = { uid: 'local' };
+                subscribeToData();
+                return;
+            }
             try {
                 if (typeof __initial_auth_token !== 'undefined' && __initial_auth_token) {
                     await signInWithCustomToken(auth, __initial_auth_token);
@@ -1082,29 +1114,46 @@
         }
         initAuth();
 
-        onAuthStateChanged(auth, (user) => {
-            if (user) {
-                currentUser = user;
-                subscribeToData();
-            }
-        });
+        if (!useLocalStorage) {
+            onAuthStateChanged(auth, (user) => {
+                if (user) {
+                    currentUser = user;
+                    subscribeToData();
+                }
+            });
+        }
 
         function subscribeToData() {
             if (!currentUser) return;
+            if (useLocalStorage) {
+                setAllRecords(loadLocalRecords());
+                return;
+            }
             const q = collection(db, 'artifacts', appId, 'users', currentUser.uid, 'resignation_records');
             onSnapshot(q, (snapshot) => {
                 const data = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
-                window.allRecords = data.sort((a, b) => new Date(b.date) - new Date(a.date));
-                
-                if(window.renderRecordsTable) window.renderRecordsTable();
-                if(window.renderAdminTable) window.renderAdminTable();
-                if(window.updateCharts) window.updateCharts();
-                if(window.updateDraftSelector) window.updateDraftSelector();
+                setAllRecords(data);
             });
         }
 
         // Expose Firebase functions
         window.saveDataToCloud = async (record, isDraft = false, showAlert = true) => {
+            if (useLocalStorage) {
+                const existing = loadLocalRecords();
+                if (window.currentDraftId) {
+                    const idx = existing.findIndex(r => r.id === window.currentDraftId);
+                    if (idx >= 0) existing[idx] = { ...existing[idx], ...record, id: window.currentDraftId };
+                } else {
+                    const newId = `local-${Date.now()}`;
+                    record.id = newId;
+                    if(isDraft) window.currentDraftId = newId;
+                    existing.unshift(record);
+                }
+                persistLocalRecords(existing);
+                setAllRecords(existing);
+                if(showAlert) alert(isDraft ? "✅ 進度已暫存！（本機）" : "案件已建立！（本機）");
+                return;
+            }
             if (!currentUser) { if(showAlert) alert("尚未連線到資料庫"); return; }
             try {
                 if (window.currentDraftId) {
@@ -1123,19 +1172,49 @@
         };
 
         window.updateDataInCloud = async (id, updatedData) => {
+            if (useLocalStorage) {
+                const existing = loadLocalRecords();
+                const idx = existing.findIndex(r => r.id === id);
+                if (idx >= 0) {
+                    existing[idx] = { ...existing[idx], ...updatedData, id };
+                    persistLocalRecords(existing);
+                    setAllRecords(existing);
+                    alert("✅ 更新成功（本機）");
+                }
+                return;
+            }
             if (!currentUser) return;
             const docRef = doc(db, 'artifacts', appId, 'users', currentUser.uid, 'resignation_records', id);
             try { await updateDoc(docRef, updatedData); alert("✅ 更新成功"); } catch (e) { alert("❌ 更新失敗"); }
         };
 
         window.deleteDataInCloud = async (id) => {
+            if (useLocalStorage) {
+                const remaining = loadLocalRecords().filter(r => r.id !== id);
+                persistLocalRecords(remaining);
+                setAllRecords(remaining);
+                alert("🗑️ 資料已刪除（本機）");
+                return;
+            }
             if (!currentUser) return;
             const docRef = doc(db, 'artifacts', appId, 'users', currentUser.uid, 'resignation_records', id);
             try { await deleteDoc(docRef); alert("🗑️ 資料已刪除"); } catch (e) { alert("❌ 刪除失敗"); }
         };
         
         window.batchUpload = async (records) => {
-            if (!currentUser) return;
+            if (useLocalStorage) {
+                const arr = loadLocalRecords();
+                let count = 0;
+                for (const rec of records) {
+                    const { id, ...data } = rec;
+                    arr.push({ ...data, id: `local-${Date.now()}-${count}` });
+                    count++;
+                }
+                persistLocalRecords(arr);
+                setAllRecords(arr);
+                return count;
+            }
+            if (!currentUser) return 0;
             let count = 0;
             for (const rec of records) {
                 const { id, ...data } = rec; 
