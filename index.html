@@ -301,6 +301,15 @@
                     </div>
                 </div>
             </div>
+            <div class="p-6">
+                <div class="bg-gray-50 border border-gray-200 rounded-lg p-4">
+                    <div class="flex items-center justify-between mb-3">
+                        <h4 class="font-bold text-gray-800 text-sm">離職去向 Top 5</h4>
+                        <span class="text-xs text-gray-500">僅計算離職結果的案件</span>
+                    </div>
+                    <ul id="destinations-list" class="divide-y divide-gray-100"></ul>
+                </div>
+            </div>
         </section>
 
         <!-- Process Flowchart Section (SOP) -->
@@ -414,12 +423,13 @@
                                     <th class="px-4 py-3 text-left text-xs font-bold text-gray-500 uppercase">日期</th>
                                     <th class="px-4 py-3 text-left text-xs font-bold text-gray-500 uppercase">人員</th>
                                     <th class="px-4 py-3 text-left text-xs font-bold text-gray-500 uppercase">處理人</th>
-                                    <th class="px-4 py-3 text-left text-xs font-bold text-gray-500 uppercase">階段</th>
-                                    <th class="px-4 py-3 text-left text-xs font-bold text-gray-500 uppercase">節點紀錄</th>
-                                    <th class="px-4 py-3 text-left text-xs font-bold text-gray-500 uppercase">結果</th>
-                                    <th class="px-4 py-3 text-left text-xs font-bold text-gray-500 uppercase">操作</th>
-                                </tr>
-                            </thead>
+                    <th class="px-4 py-3 text-left text-xs font-bold text-gray-500 uppercase">階段</th>
+                    <th class="px-4 py-3 text-left text-xs font-bold text-gray-500 uppercase">離職去向</th>
+                    <th class="px-4 py-3 text-left text-xs font-bold text-gray-500 uppercase">節點紀錄</th>
+                    <th class="px-4 py-3 text-left text-xs font-bold text-gray-500 uppercase">結果</th>
+                    <th class="px-4 py-3 text-left text-xs font-bold text-gray-500 uppercase">操作</th>
+                </tr>
+            </thead>
                             <tbody id="admin-table-body" class="bg-white divide-y divide-gray-200 text-sm"></tbody>
                         </table>
                     </div>
@@ -440,6 +450,7 @@
                     <div><label class="block text-xs font-bold text-gray-500 mb-1">離職人員</label><input type="text" id="edit-emp" class="input-field"></div>
                     <div><label class="block text-xs font-bold text-gray-500 mb-1">最後處理人</label><input type="text" id="edit-handler" class="input-field"></div>
                     <div><label class="block text-xs font-bold text-gray-500 mb-1">目前階段</label><input type="text" id="edit-stage" class="input-field" placeholder="如：留才確認 / 彥靈總 / 直屬主管"></div>
+                    <div><label class="block text-xs font-bold text-gray-500 mb-1">離職後去向（公司）</label><input type="text" id="edit-next-company" class="input-field" placeholder="例：Google / AWS / 其他"></div>
                     <div class="grid grid-cols-1 gap-3 border border-gray-200 rounded-lg p-3 bg-gray-50">
                         <div class="text-xs font-bold text-gray-600 mb-1">節點紀錄</div>
                         <div><label class="block text-xs font-bold text-gray-500 mb-1">直屬主管</label><textarea id="edit-note-supervisor" class="textarea-field"></textarea></div>
@@ -448,6 +459,7 @@
                         <div><label class="block text-xs font-bold text-gray-500 mb-1">彥靈總</label><textarea id="edit-note-yanling" class="textarea-field"></textarea></div>
                         <div><label class="block text-xs font-bold text-gray-500 mb-1">留才方案</label><textarea id="edit-note-retention" class="textarea-field"></textarea></div>
                     </div>
+                    <div><label class="block text-xs font-bold text-gray-500 mb-1">備註紀錄</label><textarea id="edit-note" class="textarea-field"></textarea></div>
                     <div><label class="block text-xs font-bold text-gray-500 mb-1">最終結果</label><select id="edit-result" class="input-field"><option value="success">成功留任</option><option value="fail">留才失敗 (仍離職)</option><option value="exit">正常離職</option><option value="draft">進行中 (Draft)</option></select></div>
                 </div>
                 <div class="bg-gray-50 px-6 py-4 flex justify-between items-center border-t border-gray-100">
@@ -464,7 +476,7 @@
     <!-- Standard Script Block -->
     <script>
         // Versioning
-        const APP_VERSION = 'v1.0.13';
+        const APP_VERSION = 'v1.0.14';
 
         // Global State
         window.allRecords = []; 
@@ -494,11 +506,16 @@
             const closed = retain + exit;
             const successRate = closed ? Math.round((retain / closed) * 100) : 0;
             const stageMap = {};
+            const destinationMap = {};
             records.forEach(r => {
                 const key = r.stage || '未標示階段';
                 stageMap[key] = (stageMap[key] || 0) + 1;
+                if((r.outcomeType === 'exit' || r.outcomeType === 'fail') && r.nextCompany){
+                    const dest = r.nextCompany.trim();
+                    if(dest) destinationMap[dest] = (destinationMap[dest] || 0) + 1;
+                }
             });
-            return { total, drafts, retain, exit, closed, successRate, stageMap };
+            return { total, drafts, retain, exit, closed, successRate, stageMap, destinationMap };
         }
 
         function updateAnalyticsCards(stats) {
@@ -560,6 +577,17 @@
             });
         }
 
+        function renderDestinationList(stats) {
+            const container = document.getElementById('destinations-list');
+            if(!container) return;
+            const entries = Object.entries(stats.destinationMap || {}).sort((a,b) => b[1]-a[1]).slice(0,5);
+            if(entries.length === 0) {
+                container.innerHTML = `<li class="text-gray-500 text-sm">${convertText('目前無離職去向資料', currentLang)}</li>`;
+                return;
+            }
+            container.innerHTML = entries.map(([name,count]) => `<li class="flex justify-between text-sm text-gray-700 border-b border-gray-100 py-1"><span class="font-medium">${convertText(name,currentLang)}</span><span class="text-blue-700 font-bold">${count}</span></li>`).join('');
+        }
+
         let analyticsYear = 'all';
         function getFilteredRecordsForAnalytics() {
             const records = window.allRecords || [];
@@ -596,6 +624,7 @@
             updateAnalyticsCards(stats);
             renderOutcomeChart(stats);
             renderStageChart(stats);
+            renderDestinationList(stats);
         };
 
         function isPlaceholderFirebaseConfig(cfg) {
@@ -1195,6 +1224,7 @@
                     <td class="px-4 py-3 font-medium text-gray-900 align-top">${rec.emp}</td>
                     <td class="px-4 py-3 text-gray-500 align-top">${rec.handler}</td>
                     <td class="px-4 py-3 text-gray-500 align-top">${convertText(rec.stage, currentLang)}</td>
+                    <td class="px-4 py-3 text-gray-500 align-top">${rec.nextCompany || convertText('未提供', currentLang)}</td>
                     <td class="px-4 py-3 text-gray-600 text-sm align-top">${historyHtml}</td>
                     <td class="px-4 py-3 ${statusColor} align-top">${convertText(rec.result, currentLang)}</td>
                     <td class="px-4 py-3 space-x-2 align-top"><button onclick="openEditModal('${rec.id}', ${index})" class="text-blue-600 hover:text-blue-800 text-xs border border-blue-200 px-2 py-1 rounded">${convertText('編輯', currentLang)}</button></td>
@@ -1220,6 +1250,7 @@
                     emp: document.getElementById('edit-emp'),
                     handler: document.getElementById('edit-handler'),
                     stage: document.getElementById('edit-stage'),
+                    nextCompany: document.getElementById('edit-next-company'),
                     noteSup: document.getElementById('edit-note-supervisor'),
                     noteShow: document.getElementById('edit-note-showrex'),
                     meeting: document.getElementById('edit-meeting-time'),
@@ -1238,6 +1269,7 @@
                 fields.emp.value = r.emp || ''; 
                 fields.handler.value = r.handler || ''; 
                 fields.stage.value = r.stage || ''; 
+                fields.nextCompany.value = r.nextCompany || ''; 
                 fields.noteSup.value = history.notes?.supervisor || ''; 
                 fields.noteShow.value = history.notes?.showRex || ''; 
                 fields.meeting.value = history.meetingTime || ''; 
@@ -1278,6 +1310,7 @@
                 emp: document.getElementById('edit-emp').value, 
                 handler: document.getElementById('edit-handler').value, 
                 stage: document.getElementById('edit-stage').value || '未標示階段',
+                nextCompany: document.getElementById('edit-next-company').value || '',
                 lastNote: finalNote, 
                 outcomeType: resType === 'success' ? 'retain' : (resType==='draft'?'draft':'exit'), 
                 result: resText,
@@ -1307,10 +1340,11 @@
         window.exportToCSV = () => { 
             const data = window.allRecords || []; 
             if(!data.length){ alert('No Data'); return; } 
-            let c = "\ufeff" + ['日期','人員','處理人','階段','節點紀錄','結果'].map(h=>convertText(h,currentLang)).join(',') + "\n"; 
+            let c = "\ufeff" + ['日期','人員','處理人','階段','離職去向','節點紀錄','結果'].map(h=>convertText(h,currentLang)).join(',') + "\n"; 
             data.forEach(r => { 
                 const historyText = flattenHistoryText(r).replace(/"/g,'""'); 
-                c += [r.date, r.emp, r.handler, r.stage, `"${historyText}"`, r.result].join(',') + "\n"; 
+                const nextCo = (r.nextCompany || '').replace(/"/g,'""'); 
+                c += [r.date, r.emp, r.handler, r.stage, `"${nextCo}"`, `"${historyText}"`, r.result].join(',') + "\n"; 
             }); 
             const b = new Blob([c],{type:"text/csv;charset=utf-8;"}); 
             const l = document.createElement("a"); 
