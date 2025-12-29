@@ -5,7 +5,6 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>研發離職面談與留才評估管理系統 (GitHub 部署版)</title>
     <script src="https://cdn.tailwindcss.com"></script>
-    <script src="https://apis.google.com/js/api.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
     <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+TC:wght@300;400;500;700&display=swap" rel="stylesheet">
@@ -104,7 +103,7 @@
                     <div id="step-display" class="p-6 h-full flex flex-col justify-between">
                         <div>
                             <div class="flex items-center justify-between mb-4">
-                            <div class="flex items-center space-x-2 text-blue-600 font-semibold text-xs uppercase tracking-wider">
+            <div class="flex items-center space-x-2 text-blue-600 font-semibold text-xs uppercase tracking-wider">
                                 <span id="current-stage-icon">📂</span>
                                 <span id="current-stage-label">案件建立</span>
                             </div>
@@ -112,13 +111,6 @@
                                 <span>✏️</span>
                                 <span id="draft-status-text">編輯草稿中</span>
                             </div>
-                            <!-- Draft Selector (Quick Access) -->
-                            <div id="draft-resume-area" class="w-1/2 hidden">
-                                    <select id="draft-select" onchange="safeLoadDraft(this.value)" class="select-field text-xs py-1 border-amber-300 bg-amber-50 font-bold text-amber-700 cursor-pointer">
-                                        <option value="">📂 載入暫存 (Drafts)...</option>
-                                        <!-- Populated via JS -->
-                                    </select>
-                                </div>
                             </div>
 
                             <h4 id="step-title" class="text-xl font-bold text-gray-900 mb-2">建立新離職案件</h4>
@@ -348,13 +340,7 @@
                     <div class="flex justify-between items-center mb-6 border-b border-gray-600 pb-4">
                         <h4 class="text-lg font-bold">所有面談紀錄總覽</h4>
                         <div class="flex gap-2">
-                             <input type="file" id="json-import" accept=".json" class="hidden" onchange="importDataJSON(this)">
-                             <button onclick="document.getElementById('json-import').click()" class="bg-amber-600 hover:bg-amber-700 text-white text-sm px-4 py-2 rounded flex items-center shadow-lg"><span>🔄</span> <span class="ml-2">匯入備份 (上傳至雲端)</span></button>
-                             <button onclick="exportDataJSON()" class="bg-blue-600 hover:bg-blue-700 text-white text-sm px-4 py-2 rounded flex items-center shadow-lg"><span>💾</span> <span class="ml-2">備份 (JSON)</span></button>
                              <button onclick="exportToCSV()" class="bg-green-600 hover:bg-green-700 text-white text-sm px-4 py-2 rounded flex items-center shadow-lg"><span>📥</span> <span class="ml-2">下載報表 (CSV)</span></button>
-                             <button id="drive-connect-btn" onclick="connectGoogleDrive()" class="bg-white text-purple-700 border border-purple-300 hover:bg-purple-50 text-sm px-4 py-2 rounded flex items-center shadow-lg"><span>☁️</span> <span class="ml-2">Google 登入</span></button>
-                             <button id="drive-backup-btn" onclick="backupRecordsToDrive()" class="bg-purple-600 hover:bg-purple-700 text-white text-sm px-4 py-2 rounded flex items-center shadow-lg disabled:opacity-50"><span>📤</span> <span class="ml-2">備份到 Google 雲端</span></button>
-                             <span id="google-drive-status" class="text-xs text-amber-100 font-bold bg-purple-900/40 px-2 py-1 rounded hidden">等待初始化</span>
                             <button onclick="logoutAdmin()" class="border border-gray-500 text-gray-300 text-xs px-3 py-2 rounded hover:bg-gray-700 ml-2">登出</button>
                         </div>
                     </div>
@@ -407,7 +393,7 @@
     <!-- Standard Script Block -->
     <script>
         // Versioning
-        const APP_VERSION = 'v1.0.2';
+        const APP_VERSION = 'v1.0.3';
 
         // Global State
         window.allRecords = []; 
@@ -417,6 +403,16 @@
         let outcomeChartInstance = null;
         let currentLang = 'zh-TW';
         window.currentDraftId = null;
+
+        function isPlaceholderFirebaseConfig(cfg) {
+            return !cfg.apiKey || cfg.apiKey.startsWith('YOUR_') || !cfg.projectId || cfg.projectId.includes('YOUR_PROJECT_ID');
+        }
+        function setAllRecords(newRecords) {
+            window.allRecords = (newRecords || []).sort((a, b) => new Date(b.date) - new Date(a.date));
+            if(window.renderRecordsTable) window.renderRecordsTable();
+            if(window.renderAdminTable) window.renderAdminTable();
+            if(window.updateCharts) window.updateCharts();
+        }
 
         // Google Drive (可透過 __google_drive_config 覆寫)
         const defaultGoogleDriveConfig = { 
@@ -525,7 +521,6 @@
         document.addEventListener('DOMContentLoaded', () => {
             const versionTag = document.getElementById('app-version-tag');
             if (versionTag) versionTag.textContent = APP_VERSION;
-            initializeDriveUI();
         });
 
         // --- CORE LOGIC: Save & Load ---
@@ -858,20 +853,6 @@
             }
         }
 
-        window.updateDraftSelector = function() {
-            const select = document.getElementById('draft-select');
-            const draftArea = document.getElementById('draft-resume-area');
-            if(!window.allRecords) return;
-            const drafts = window.allRecords.filter(r => r.outcomeType === 'draft');
-            if(drafts.length > 0) {
-                draftArea.classList.remove('hidden');
-                select.innerHTML = `<option value="">📂 ${convertText('載入未結案...', currentLang)} (${drafts.length})</option>` + 
-                    drafts.map(d => `<option value="${d.id}">${d.emp} - ${convertText(d.stage, currentLang)} (${d.date})</option>`).join('');
-            } else {
-                draftArea.classList.add('hidden');
-            }
-        };
-
         window.renderRecordsTable = function() {
             const tbody = document.getElementById('records-body');
             // Show drafts AND completed
@@ -944,107 +925,7 @@
             }
         };
         function updateDriveStatus(text, tone = 'info') {
-            const status = document.getElementById('google-drive-status');
-            if(!status) return;
-            if(!text) { status.classList.add('hidden'); return; }
-            status.textContent = text;
-            status.classList.remove('hidden');
-            status.classList.toggle('text-red-100', tone === 'error');
-            status.classList.toggle('text-amber-100', tone !== 'error');
-        }
-        function hasDriveConfig() {
-            return googleDriveConfig.apiKey && googleDriveConfig.clientId && !googleDriveConfig.apiKey.startsWith('YOUR_') && !googleDriveConfig.clientId.startsWith('YOUR_');
-        }
-        async function ensureDriveReady() {
-            if(!hasDriveConfig()) {
-                updateDriveStatus('請設定 Google 雲端 API 金鑰', 'error');
-                throw new Error('缺少 Google 雲端設定');
-            }
-            if (typeof gapi === 'undefined') {
-                updateDriveStatus('Google API 載入失敗', 'error');
-                throw new Error('Google API 未載入');
-            }
-            if(googleDriveReady) return;
-            await new Promise((resolve, reject) => {
-                gapi.load('client:auth2', async () => {
-                    try {
-                        await gapi.client.init({
-                            apiKey: googleDriveConfig.apiKey,
-                            clientId: googleDriveConfig.clientId,
-                            discoveryDocs: ['https://www.googleapis.com/discovery/v1/apis/drive/v3/rest'],
-                            scope: googleDriveConfig.scope
-                        });
-                        googleAuthInstance = gapi.auth2.getAuthInstance();
-                        googleDriveReady = true;
-                        updateDriveStatus('Google 雲端就緒');
-                        resolve();
-                    } catch (err) {
-                        updateDriveStatus('初始化 Google 雲端失敗', 'error');
-                        reject(err);
-                    }
-                });
-            });
-        }
-        window.connectGoogleDrive = async () => {
-            try {
-                await ensureDriveReady();
-                if(!googleAuthInstance.isSignedIn.get()) {
-                    await googleAuthInstance.signIn();
-                }
-                googleDriveSignedIn = true;
-                const backupBtn = document.getElementById('drive-backup-btn');
-                if(backupBtn) backupBtn.disabled = false;
-                updateDriveStatus('已登入 Google 雲端');
-            } catch(err) {
-                console.error(err);
-                updateDriveStatus(`Google 連線失敗: ${err.message}`, 'error');
-            }
-        };
-        window.backupRecordsToDrive = async () => {
-            if(!window.allRecords || window.allRecords.length === 0) { alert('尚無資料可備份'); return; }
-            try {
-                if(!googleDriveSignedIn) {
-                    await connectGoogleDrive();
-                    if(!googleDriveSignedIn) return;
-                }
-                await ensureDriveReady();
-                const payload = JSON.stringify(window.allRecords, null, 2);
-                const boundary = '-------314159265358979323846';
-                const delimiter = `\r\n--${boundary}\r\n`;
-                const closeDelim = `\r\n--${boundary}--`;
-                const metadata = { name: `resignation_records_${new Date().toISOString().slice(0,10)}.json`, mimeType: 'application/json' };
-                const multipartRequestBody =
-                    delimiter + 'Content-Type: application/json\r\n\r\n' +
-                    JSON.stringify(metadata) +
-                    delimiter + 'Content-Type: application/json\r\n\r\n' +
-                    payload +
-                    closeDelim;
-                await gapi.client.request({
-                    path: '/upload/drive/v3/files',
-                    method: 'POST',
-                    params: { uploadType: 'multipart' },
-                    headers: { 'Content-Type': `multipart/related; boundary=${boundary}` },
-                    body: multipartRequestBody
-                });
-                updateDriveStatus('已備份至 Google 雲端');
-                alert('✅ 備份完成 (Google 雲端)');
-            } catch(err) {
-                console.error(err);
-                updateDriveStatus('備份到 Google 雲端失敗', 'error');
-                alert('❌ 備份失敗: ' + err.message);
-            }
-        };
-        function initializeDriveUI() {
-            const backupBtn = document.getElementById('drive-backup-btn');
-            if(backupBtn && !hasDriveConfig()) {
-                backupBtn.disabled = true;
-                backupBtn.classList.add('opacity-50');
-                updateDriveStatus('請先設定 Google 雲端金鑰', 'error');
-            }
-        }
         window.exportToCSV = () => { const data = window.allRecords; if(!data.length){ alert('No Data'); return; } let c = "\ufeff" + ['日期','人員','處理人','階段','備註','結果'].map(h=>convertText(h,currentLang)).join(',') + "\n"; data.forEach(r => c += [r.date, r.emp, r.handler, r.stage, `"${r.lastNote.replace(/"/g,'""')}"`, r.result].join(',') + "\n"); const b = new Blob([c],{type:"text/csv;charset=utf-8;"}); const l = document.createElement("a"); l.href = URL.createObjectURL(b); l.download = `report_${new Date().toISOString().slice(0,10)}.csv`; l.click(); };
-        window.exportDataJSON = () => { const data = window.allRecords; if(!data.length)return; const b = new Blob([JSON.stringify(data,null,2)],{type:"application/json"}); const l = document.createElement("a"); l.href = URL.createObjectURL(b); l.download = `backup_${new Date().toISOString().slice(0,10)}.json`; l.click(); };
-        window.importDataJSON = (input) => { const f = input.files[0]; if(!f) return; const r = new FileReader(); r.onload = async (e) => { try { const d = JSON.parse(e.target.result); if(Array.isArray(d) && confirm(convertText('確定要匯入備份嗎？', currentLang))) { const c = await window.batchUpload(d); alert(`成功匯入 ${c} 筆資料`); } } catch(err){ alert('Error'); } input.value=''; }; r.readAsText(f); };
         window.downloadSOPImage = () => { 
             const el = document.querySelector('#sop-tree-container'); const btn = document.getElementById('btn-download-sop'); const txt = btn.innerHTML; btn.innerHTML = '...'; btn.disabled = true;
             const orig = { w: el.style.width, h: el.style.height, ov: el.style.overflow, mw: el.style.minWidth };
@@ -1088,22 +969,19 @@
             console.log("Using placeholder config");
         }
 
-        useLocalStorage = isPlaceholderFirebaseConfig(finalConfig);
+        if (isPlaceholderFirebaseConfig(finalConfig)) {
+            alert('請設定 Firebase 參數，才能同步至雲端。');
+        }
 
-        const app = useLocalStorage ? null : initializeApp(finalConfig);
-        const auth = useLocalStorage ? null : getAuth(app);
-        const db = useLocalStorage ? null : getFirestore(app);
+        const app = initializeApp(finalConfig);
+        const auth = getAuth(app);
+        const db = getFirestore(app);
         // GitHub 部署時請自定義一個 ID，例如 'my-company-app'
         const appId = typeof __app_id !== 'undefined' ? __app_id : 'resignation-app-v1';
         
         let currentUser = null;
 
         async function initAuth() {
-            if (useLocalStorage) {
-                currentUser = { uid: 'local' };
-                subscribeToData();
-                return;
-            }
             try {
                 if (typeof __initial_auth_token !== 'undefined' && __initial_auth_token) {
                     await signInWithCustomToken(auth, __initial_auth_token);
@@ -1114,21 +992,15 @@
         }
         initAuth();
 
-        if (!useLocalStorage) {
-            onAuthStateChanged(auth, (user) => {
-                if (user) {
-                    currentUser = user;
-                    subscribeToData();
-                }
-            });
-        }
+        onAuthStateChanged(auth, (user) => {
+            if (user) {
+                currentUser = user;
+                subscribeToData();
+            }
+        });
 
         function subscribeToData() {
             if (!currentUser) return;
-            if (useLocalStorage) {
-                setAllRecords(loadLocalRecords());
-                return;
-            }
             const q = collection(db, 'artifacts', appId, 'users', currentUser.uid, 'resignation_records');
             onSnapshot(q, (snapshot) => {
                 const data = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
@@ -1138,22 +1010,6 @@
 
         // Expose Firebase functions
         window.saveDataToCloud = async (record, isDraft = false, showAlert = true) => {
-            if (useLocalStorage) {
-                const existing = loadLocalRecords();
-                if (window.currentDraftId) {
-                    const idx = existing.findIndex(r => r.id === window.currentDraftId);
-                    if (idx >= 0) existing[idx] = { ...existing[idx], ...record, id: window.currentDraftId };
-                } else {
-                    const newId = `local-${Date.now()}`;
-                    record.id = newId;
-                    if(isDraft) window.currentDraftId = newId;
-                    existing.unshift(record);
-                }
-                persistLocalRecords(existing);
-                setAllRecords(existing);
-                if(showAlert) alert(isDraft ? "✅ 進度已暫存！（本機）" : "案件已建立！（本機）");
-                return;
-            }
             if (!currentUser) { if(showAlert) alert("尚未連線到資料庫"); return; }
             try {
                 if (window.currentDraftId) {
@@ -1172,48 +1028,18 @@
         };
 
         window.updateDataInCloud = async (id, updatedData) => {
-            if (useLocalStorage) {
-                const existing = loadLocalRecords();
-                const idx = existing.findIndex(r => r.id === id);
-                if (idx >= 0) {
-                    existing[idx] = { ...existing[idx], ...updatedData, id };
-                    persistLocalRecords(existing);
-                    setAllRecords(existing);
-                    alert("✅ 更新成功（本機）");
-                }
-                return;
-            }
             if (!currentUser) return;
             const docRef = doc(db, 'artifacts', appId, 'users', currentUser.uid, 'resignation_records', id);
             try { await updateDoc(docRef, updatedData); alert("✅ 更新成功"); } catch (e) { alert("❌ 更新失敗"); }
         };
 
         window.deleteDataInCloud = async (id) => {
-            if (useLocalStorage) {
-                const remaining = loadLocalRecords().filter(r => r.id !== id);
-                persistLocalRecords(remaining);
-                setAllRecords(remaining);
-                alert("🗑️ 資料已刪除（本機）");
-                return;
-            }
             if (!currentUser) return;
             const docRef = doc(db, 'artifacts', appId, 'users', currentUser.uid, 'resignation_records', id);
             try { await deleteDoc(docRef); alert("🗑️ 資料已刪除"); } catch (e) { alert("❌ 刪除失敗"); }
         };
         
         window.batchUpload = async (records) => {
-            if (useLocalStorage) {
-                const arr = loadLocalRecords();
-                let count = 0;
-                for (const rec of records) {
-                    const { id, ...data } = rec;
-                    arr.push({ ...data, id: `local-${Date.now()}-${count}` });
-                    count++;
-                }
-                persistLocalRecords(arr);
-                setAllRecords(arr);
-                return count;
-            }
             if (!currentUser) return 0;
             let count = 0;
             for (const rec of records) {
