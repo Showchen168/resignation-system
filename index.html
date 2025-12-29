@@ -5,6 +5,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>研發離職面談與留才評估管理系統 (GitHub 部署版)</title>
     <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://apis.google.com/js/api.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
     <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+TC:wght@300;400;500;700&display=swap" rel="stylesheet">
@@ -47,6 +48,8 @@
         .flow-label { @apply absolute bg-white px-2 py-0.5 text-xs font-bold text-gray-500 border border-gray-200 rounded-full shadow-sm; top: -12px; left: 50%; transform: translateX(-50%); z-index: 20; }
         .note-card { @apply bg-blue-50 border-l-4 border-blue-500 p-3 text-sm text-gray-700 mb-3; }
         .modal-overlay { background-color: rgba(0, 0, 0, 0.5); backdrop-filter: blur(2px); }
+        .draft-badge { @apply text-xs font-bold text-amber-800 bg-amber-100 border border-amber-300 px-2 py-1 rounded-full inline-flex items-center gap-1; }
+        .draft-badge.hidden { display: none; }
         
         /* Animations */
         .animate-flash { animation: flash 1s; }
@@ -66,6 +69,7 @@
                         <span class="w-2 h-2 bg-green-500 rounded-full mr-1 animate-pulse"></span> 
                         Github Deployment Version
                     </span>
+                    <span class="text-xs text-gray-500 font-medium">版本：<span id="app-version-tag">載入中</span></span>
                 </div>
             </div>
             <nav class="hidden md:flex space-x-4 text-sm font-medium text-gray-600 items-center">
@@ -100,12 +104,16 @@
                     <div id="step-display" class="p-6 h-full flex flex-col justify-between">
                         <div>
                             <div class="flex items-center justify-between mb-4">
-                                <div class="flex items-center space-x-2 text-blue-600 font-semibold text-xs uppercase tracking-wider">
-                                    <span id="current-stage-icon">📂</span>
-                                    <span id="current-stage-label">案件建立</span>
-                                </div>
-                                <!-- Draft Selector (Quick Access) -->
-                                <div id="draft-resume-area" class="w-1/2 hidden">
+                            <div class="flex items-center space-x-2 text-blue-600 font-semibold text-xs uppercase tracking-wider">
+                                <span id="current-stage-icon">📂</span>
+                                <span id="current-stage-label">案件建立</span>
+                            </div>
+                            <div id="draft-status" class="draft-badge hidden">
+                                <span>✏️</span>
+                                <span id="draft-status-text">編輯草稿中</span>
+                            </div>
+                            <!-- Draft Selector (Quick Access) -->
+                            <div id="draft-resume-area" class="w-1/2 hidden">
                                     <select id="draft-select" onchange="safeLoadDraft(this.value)" class="select-field text-xs py-1 border-amber-300 bg-amber-50 font-bold text-amber-700 cursor-pointer">
                                         <option value="">📂 載入暫存 (Drafts)...</option>
                                         <!-- Populated via JS -->
@@ -344,6 +352,9 @@
                              <button onclick="document.getElementById('json-import').click()" class="bg-amber-600 hover:bg-amber-700 text-white text-sm px-4 py-2 rounded flex items-center shadow-lg"><span>🔄</span> <span class="ml-2">匯入備份 (上傳至雲端)</span></button>
                              <button onclick="exportDataJSON()" class="bg-blue-600 hover:bg-blue-700 text-white text-sm px-4 py-2 rounded flex items-center shadow-lg"><span>💾</span> <span class="ml-2">備份 (JSON)</span></button>
                              <button onclick="exportToCSV()" class="bg-green-600 hover:bg-green-700 text-white text-sm px-4 py-2 rounded flex items-center shadow-lg"><span>📥</span> <span class="ml-2">下載報表 (CSV)</span></button>
+                             <button id="drive-connect-btn" onclick="connectGoogleDrive()" class="bg-white text-purple-700 border border-purple-300 hover:bg-purple-50 text-sm px-4 py-2 rounded flex items-center shadow-lg"><span>☁️</span> <span class="ml-2">Google 登入</span></button>
+                             <button id="drive-backup-btn" onclick="backupRecordsToDrive()" class="bg-purple-600 hover:bg-purple-700 text-white text-sm px-4 py-2 rounded flex items-center shadow-lg disabled:opacity-50"><span>📤</span> <span class="ml-2">備份到 Google 雲端</span></button>
+                             <span id="google-drive-status" class="text-xs text-amber-100 font-bold bg-purple-900/40 px-2 py-1 rounded hidden">等待初始化</span>
                             <button onclick="logoutAdmin()" class="border border-gray-500 text-gray-300 text-xs px-3 py-2 rounded hover:bg-gray-700 ml-2">登出</button>
                         </div>
                     </div>
@@ -395,6 +406,9 @@
 
     <!-- Standard Script Block -->
     <script>
+        // Versioning
+        const APP_VERSION = 'v1.0.1';
+
         // Global State
         window.allRecords = []; 
         let currentSessionData = { empName: '', supName: '', meetingTime: '', notes: { supervisor: '', showRex: '', yanling: '', retention: '' } };
@@ -403,6 +417,24 @@
         let outcomeChartInstance = null;
         let currentLang = 'zh-TW';
         window.currentDraftId = null;
+
+        // Google Drive (可透過 __google_drive_config 覆寫)
+        const defaultGoogleDriveConfig = { 
+            apiKey: 'YOUR_GOOGLE_API_KEY', 
+            clientId: 'YOUR_GOOGLE_CLIENT_ID.apps.googleusercontent.com', 
+            scope: 'https://www.googleapis.com/auth/drive.file' 
+        };
+        let googleDriveConfig = { ...defaultGoogleDriveConfig };
+        try {
+            if (typeof __google_drive_config !== 'undefined') {
+                googleDriveConfig = { ...defaultGoogleDriveConfig, ...__google_drive_config };
+            }
+        } catch (e) {
+            console.warn('未讀取到自定義的 Google 雲端設定，使用預設值');
+        }
+        let googleDriveReady = false;
+        let googleDriveSignedIn = false;
+        let googleAuthInstance = null;
 
         // Flow Configuration
         const flowConfig = {
@@ -419,51 +451,89 @@
             final_fail: { title: '結案：留才失敗 (仍離職)', desc: '雖經留才程序，員工仍決定離職。', icon: '🚪', isEnd: true, type: 'neutral', visualStep: 5, stageName: '留才確認', outcomeType: 'exit', result: '留才失敗 (仍離職)' }
         };
 
+        function syncCurrentStepInputs() {
+            const config = flowConfig[currentStepKey] || {};
+            if (config.requireNote) {
+                const note = (document.getElementById('current-notes').value || '').trim();
+                if(currentStepKey === 'supervisor') currentSessionData.notes.supervisor = note;
+                if(currentStepKey === 'show_rex') currentSessionData.notes.showRex = note;
+                if(currentStepKey === 'yanling') currentSessionData.notes.yanling = note;
+                if(currentStepKey === 'retention_execution') currentSessionData.notes.retention = note;
+            }
+            if (config.requireTime) {
+                currentSessionData.meetingTime = document.getElementById('meeting-time').value;
+            }
+        }
+
+        function deriveLastNoteForStep(stepKey) {
+            if(stepKey === 'assistant' && currentSessionData.meetingTime) {
+                return `會議時間: ${currentSessionData.meetingTime.replace('T', ' ')}`;
+            }
+            if(stepKey === 'supervisor') return currentSessionData.notes.supervisor || '暫存-主管評估';
+            if(stepKey === 'show_rex') return currentSessionData.notes.showRex || '暫存-Show/Rex';
+            if(stepKey === 'yanling') return currentSessionData.notes.yanling || '暫存-彥靈總';
+            if(stepKey === 'retention_execution') return currentSessionData.notes.retention || '暫存-留才方案';
+            return '手動暫存...';
+        }
+
+        function getOutcomeNote(stepKey) {
+            if(stepKey === 'exit_normal_sup') return currentSessionData.notes.supervisor || '無備註';
+            if(stepKey === 'exit_normal_rex') return currentSessionData.notes.showRex || '無備註';
+            if(stepKey === 'exit_normal_yan') return currentSessionData.notes.yanling || '無備註';
+            if(stepKey === 'final_success' || stepKey === 'final_fail' || stepKey === 'retention_execution') return currentSessionData.notes.retention || '無備註';
+            return deriveLastNoteForStep(stepKey);
+        }
+
+        function updateDraftStatusBadge(text) {
+            const badge = document.getElementById('draft-status');
+            const label = document.getElementById('draft-status-text');
+            if (!badge || !label) return;
+            if (!text) {
+                badge.classList.add('hidden');
+                label.textContent = '';
+                return;
+            }
+            label.textContent = text;
+            badge.classList.remove('hidden');
+        }
+
+        document.addEventListener('DOMContentLoaded', () => {
+            const versionTag = document.getElementById('app-version-tag');
+            if (versionTag) versionTag.textContent = APP_VERSION;
+            initializeDriveUI();
+        });
+
         // --- CORE LOGIC: Save & Load ---
 
-        window.saveDraft = function() {
-            // Get Current Input
+        window.saveDraft = function(showAlert = true) {
             let emp = document.getElementById('emp-name').value.trim();
             let sup = document.getElementById('sup-name').value.trim();
-            
             if(!emp || !sup) {
                 alert("請至少輸入人員姓名與主管姓名才能暫存。");
                 return;
             }
 
-            // Sync Inputs
             currentSessionData.empName = emp;
             currentSessionData.supName = sup;
-            
-            if(currentStepKey !== 'start') {
-                const stepConfig = flowConfig[currentStepKey];
-                const currentNote = document.getElementById('current-notes').value;
-                if(stepConfig.requireNote) {
-                    if(currentStepKey === 'supervisor') currentSessionData.notes.supervisor = currentNote;
-                    else if(currentStepKey === 'show_rex') currentSessionData.notes.showRex = currentNote;
-                    else if(currentStepKey === 'yanling') currentSessionData.notes.yanling = currentNote;
-                    else if(currentStepKey === 'retention_execution') currentSessionData.notes.retention = currentNote;
-                }
-                if(stepConfig.requireTime) {
-                    currentSessionData.meetingTime = document.getElementById('meeting-time').value;
-                }
-            }
+            syncCurrentStepInputs();
 
+            const existing = window.allRecords.find(r => r.id === window.currentDraftId);
+            const lastNote = deriveLastNoteForStep(currentStepKey);
             const draftData = {
-                date: new Date().toISOString().split('T')[0],
+                date: existing?.date || new Date().toISOString().split('T')[0],
                 emp: currentSessionData.empName,
                 handler: currentSessionData.supName,
                 stage: flowConfig[currentStepKey]?.stageName || '案件建立',
-                lastNote: '手動暫存...',
+                lastNote,
                 result: '進行中 (Draft)',
                 outcomeType: 'draft',
                 draftStepKey: currentStepKey,
-                draftSessionData: currentSessionData
+                draftSessionData: JSON.parse(JSON.stringify(currentSessionData))
             };
             
-            // Call Database
             if(window.saveDataToCloud) {
-                window.saveDataToCloud(draftData, true, false); // Alert = Yes
+                window.saveDataToCloud(draftData, true, showAlert); 
+                updateDraftStatusBadge('草稿已暫存');
             } else {
                 alert("資料庫尚未連線，請稍候...");
             }
@@ -509,7 +579,8 @@
                 currentSessionData = {
                     ...defaultData,
                     ...sourceData,
-                    notes: { ...defaultData.notes, ...(sourceData.notes || {}) }
+                    notes: { ...defaultData.notes, ...(sourceData.notes || {}) },
+                    meetingTime: sourceData.meetingTime || ''
                 };
 
                 // UI Update
@@ -517,6 +588,7 @@
                 document.getElementById('sup-name').value = currentSessionData.supName;
                 document.getElementById('v-emp-name').textContent = currentSessionData.empName;
                 document.getElementById('v-sup-name').textContent = currentSessionData.supName;
+                updateDraftStatusBadge(`編輯草稿：${currentSessionData.empName}`);
                 
                 if(stepKey !== 'start') {
                     document.getElementById('case-info').classList.remove('hidden');
@@ -563,6 +635,7 @@
             currentSessionData.empName = empName;
             currentSessionData.supName = supName;
             window.currentDraftId = null;
+            updateDraftStatusBadge(null);
             document.getElementById('v-emp-name').textContent = empName;
             document.getElementById('v-sup-name').textContent = supName;
             document.getElementById('case-info').classList.remove('hidden');
@@ -625,19 +698,22 @@
                 
                 // Auto Final Save
                 let handler = config.handlerKey === 'supName' ? currentSessionData.supName : (config.handlerKey === 'Show/Rex' ? 'Show/Rex' : (config.handlerKey === '彥靈總' ? '彥靈總' : 'HR/Admin'));
+                const lastNote = getOutcomeNote(targetKey);
                 if(window.saveDataToCloud) {
                     window.saveDataToCloud({
                         date: new Date().toISOString().split('T')[0],
                         emp: currentSessionData.empName,
                         handler: handler,
                         stage: config.stageName,
-                        lastNote: document.getElementById('current-notes').value || '無備註',
+                        lastNote,
                         result: config.result || config.title,
                         outcomeType: config.outcomeType,
                         draftStepKey: null,
                         draftSessionData: null
                     });
                 }
+                window.currentDraftId = null;
+                updateDraftStatusBadge(null);
             } else {
                 // In Process
                 document.getElementById('reset-area').classList.add('hidden');
@@ -652,14 +728,6 @@
                         // Validation
                         if (config.requireNote && !document.getElementById('current-notes').value.trim()) { alert(convertText('請輸入內容', currentLang)); return; }
                         if (config.requireTime && !document.getElementById('meeting-time').value) { alert(convertText('請選擇時間', currentLang)); return; }
-                        
-                        // Save State
-                        const currentNote = document.getElementById('current-notes').value;
-                        if(targetKey === 'supervisor') currentSessionData.notes.supervisor = currentNote;
-                        if(targetKey === 'show_rex') currentSessionData.notes.showRex = currentNote;
-                        if(targetKey === 'yanling') currentSessionData.notes.yanling = currentNote;
-                        if(targetKey === 'retention_execution') currentSessionData.notes.retention = currentNote;
-                        if(targetKey === 'assistant') currentSessionData.meetingTime = document.getElementById('meeting-time').value;
 
                         // Checkpoint Save (Silent)
                         if(window.saveDataToCloud) {
@@ -706,6 +774,7 @@
             document.getElementById('case-info').classList.add('hidden');
             document.getElementById('draft-select').value = ""; 
             currentSessionData = { empName: '', supName: '', meetingTime: '', notes: { supervisor: '', showRex: '', yanling: '', retention: '' } };
+            updateDraftStatusBadge(null);
             
             const config = flowConfig['start'];
             document.getElementById('step-title').textContent = config.title;
@@ -849,6 +918,105 @@
                 closeEditModal();
             }
         };
+        function updateDriveStatus(text, tone = 'info') {
+            const status = document.getElementById('google-drive-status');
+            if(!status) return;
+            if(!text) { status.classList.add('hidden'); return; }
+            status.textContent = text;
+            status.classList.remove('hidden');
+            status.classList.toggle('text-red-100', tone === 'error');
+            status.classList.toggle('text-amber-100', tone !== 'error');
+        }
+        function hasDriveConfig() {
+            return googleDriveConfig.apiKey && googleDriveConfig.clientId && !googleDriveConfig.apiKey.startsWith('YOUR_') && !googleDriveConfig.clientId.startsWith('YOUR_');
+        }
+        async function ensureDriveReady() {
+            if(!hasDriveConfig()) {
+                updateDriveStatus('請設定 Google 雲端 API 金鑰', 'error');
+                throw new Error('缺少 Google 雲端設定');
+            }
+            if (typeof gapi === 'undefined') {
+                updateDriveStatus('Google API 載入失敗', 'error');
+                throw new Error('Google API 未載入');
+            }
+            if(googleDriveReady) return;
+            await new Promise((resolve, reject) => {
+                gapi.load('client:auth2', async () => {
+                    try {
+                        await gapi.client.init({
+                            apiKey: googleDriveConfig.apiKey,
+                            clientId: googleDriveConfig.clientId,
+                            discoveryDocs: ['https://www.googleapis.com/discovery/v1/apis/drive/v3/rest'],
+                            scope: googleDriveConfig.scope
+                        });
+                        googleAuthInstance = gapi.auth2.getAuthInstance();
+                        googleDriveReady = true;
+                        updateDriveStatus('Google 雲端就緒');
+                        resolve();
+                    } catch (err) {
+                        updateDriveStatus('初始化 Google 雲端失敗', 'error');
+                        reject(err);
+                    }
+                });
+            });
+        }
+        window.connectGoogleDrive = async () => {
+            try {
+                await ensureDriveReady();
+                if(!googleAuthInstance.isSignedIn.get()) {
+                    await googleAuthInstance.signIn();
+                }
+                googleDriveSignedIn = true;
+                const backupBtn = document.getElementById('drive-backup-btn');
+                if(backupBtn) backupBtn.disabled = false;
+                updateDriveStatus('已登入 Google 雲端');
+            } catch(err) {
+                console.error(err);
+                updateDriveStatus(`Google 連線失敗: ${err.message}`, 'error');
+            }
+        };
+        window.backupRecordsToDrive = async () => {
+            if(!window.allRecords || window.allRecords.length === 0) { alert('尚無資料可備份'); return; }
+            try {
+                if(!googleDriveSignedIn) {
+                    await connectGoogleDrive();
+                    if(!googleDriveSignedIn) return;
+                }
+                await ensureDriveReady();
+                const payload = JSON.stringify(window.allRecords, null, 2);
+                const boundary = '-------314159265358979323846';
+                const delimiter = `\r\n--${boundary}\r\n`;
+                const closeDelim = `\r\n--${boundary}--`;
+                const metadata = { name: `resignation_records_${new Date().toISOString().slice(0,10)}.json`, mimeType: 'application/json' };
+                const multipartRequestBody =
+                    delimiter + 'Content-Type: application/json\r\n\r\n' +
+                    JSON.stringify(metadata) +
+                    delimiter + 'Content-Type: application/json\r\n\r\n' +
+                    payload +
+                    closeDelim;
+                await gapi.client.request({
+                    path: '/upload/drive/v3/files',
+                    method: 'POST',
+                    params: { uploadType: 'multipart' },
+                    headers: { 'Content-Type': `multipart/related; boundary=${boundary}` },
+                    body: multipartRequestBody
+                });
+                updateDriveStatus('已備份至 Google 雲端');
+                alert('✅ 備份完成 (Google 雲端)');
+            } catch(err) {
+                console.error(err);
+                updateDriveStatus('備份到 Google 雲端失敗', 'error');
+                alert('❌ 備份失敗: ' + err.message);
+            }
+        };
+        function initializeDriveUI() {
+            const backupBtn = document.getElementById('drive-backup-btn');
+            if(backupBtn && !hasDriveConfig()) {
+                backupBtn.disabled = true;
+                backupBtn.classList.add('opacity-50');
+                updateDriveStatus('請先設定 Google 雲端金鑰', 'error');
+            }
+        }
         window.exportToCSV = () => { const data = window.allRecords; if(!data.length){ alert('No Data'); return; } let c = "\ufeff" + ['日期','人員','處理人','階段','備註','結果'].map(h=>convertText(h,currentLang)).join(',') + "\n"; data.forEach(r => c += [r.date, r.emp, r.handler, r.stage, `"${r.lastNote.replace(/"/g,'""')}"`, r.result].join(',') + "\n"); const b = new Blob([c],{type:"text/csv;charset=utf-8;"}); const l = document.createElement("a"); l.href = URL.createObjectURL(b); l.download = `report_${new Date().toISOString().slice(0,10)}.csv`; l.click(); };
         window.exportDataJSON = () => { const data = window.allRecords; if(!data.length)return; const b = new Blob([JSON.stringify(data,null,2)],{type:"application/json"}); const l = document.createElement("a"); l.href = URL.createObjectURL(b); l.download = `backup_${new Date().toISOString().slice(0,10)}.json`; l.click(); };
         window.importDataJSON = (input) => { const f = input.files[0]; if(!f) return; const r = new FileReader(); r.onload = async (e) => { try { const d = JSON.parse(e.target.result); if(Array.isArray(d) && confirm(convertText('確定要匯入備份嗎？', currentLang))) { const c = await window.batchUpload(d); alert(`成功匯入 ${c} 筆資料`); } } catch(err){ alert('Error'); } input.value=''; }; r.readAsText(f); };
