@@ -404,7 +404,7 @@
                                     <th class="px-4 py-3 text-left text-xs font-bold text-gray-500 uppercase">人員</th>
                                     <th class="px-4 py-3 text-left text-xs font-bold text-gray-500 uppercase">處理人</th>
                                     <th class="px-4 py-3 text-left text-xs font-bold text-gray-500 uppercase">階段</th>
-                                    <th class="px-4 py-3 text-left text-xs font-bold text-gray-500 uppercase">備註</th>
+                                    <th class="px-4 py-3 text-left text-xs font-bold text-gray-500 uppercase">節點紀錄</th>
                                     <th class="px-4 py-3 text-left text-xs font-bold text-gray-500 uppercase">結果</th>
                                     <th class="px-4 py-3 text-left text-xs font-bold text-gray-500 uppercase">操作</th>
                                 </tr>
@@ -445,7 +445,7 @@
     <!-- Standard Script Block -->
     <script>
         // Versioning
-        const APP_VERSION = 'v1.0.7';
+        const APP_VERSION = 'v1.0.8';
 
         // Global State
         window.allRecords = []; 
@@ -696,6 +696,18 @@
             return deriveLastNoteForStep(stepKey);
         }
 
+        function buildHistoryPayload(data = currentSessionData) {
+            return {
+                meetingTime: data.meetingTime || '',
+                notes: {
+                    supervisor: data.notes?.supervisor || '',
+                    showRex: data.notes?.showRex || '',
+                    yanling: data.notes?.yanling || '',
+                    retention: data.notes?.retention || ''
+                }
+            };
+        }
+
         function updateDraftStatusBadge(text) {
             const badge = document.getElementById('draft-status');
             const label = document.getElementById('draft-status-text');
@@ -735,6 +747,7 @@
 
             const existing = window.allRecords.find(r => r.id === window.currentDraftId);
             const lastNote = deriveLastNoteForStep(currentStepKey);
+            const history = buildHistoryPayload();
             const draftData = {
                 date: existing?.date || new Date().toISOString().split('T')[0],
                 emp: currentSessionData.empName,
@@ -744,7 +757,8 @@
                 result: '進行中 (Draft)',
                 outcomeType: 'draft',
                 draftStepKey: currentStepKey,
-                draftSessionData: JSON.parse(JSON.stringify(currentSessionData))
+                draftSessionData: JSON.parse(JSON.stringify(currentSessionData)),
+                history
             };
             
             if(window.saveDataToCloud) {
@@ -932,7 +946,8 @@
                         result: config.result || config.title,
                         outcomeType: config.outcomeType,
                         draftStepKey: null,
-                        draftSessionData: null
+                        draftSessionData: null,
+                        history: buildHistoryPayload()
                     });
                 }
                 window.currentDraftId = null;
@@ -1017,6 +1032,19 @@
             `;
             document.getElementById('reset-area').classList.add('hidden');
             updateVisualFlow(0, 'reset');
+        }
+
+        function renderHistorySummary(rec) {
+            const source = rec.history || rec.draftSessionData || {};
+            const notes = source.notes || {};
+            const items = [];
+            if(notes.supervisor) items.push(`<div><span class="font-bold text-gray-600">${convertText('直屬主管', currentLang)}：</span>${notes.supervisor}</div>`);
+            if(notes.showRex) items.push(`<div><span class="font-bold text-gray-600">Show/Rex：</span>${notes.showRex}</div>`);
+            if(source.meetingTime) items.push(`<div><span class="font-bold text-gray-600">${convertText('Sammy 會議', currentLang)}：</span>${source.meetingTime.replace('T',' ')}</div>`);
+            if(notes.yanling) items.push(`<div><span class="font-bold text-gray-600">${convertText('彥靈總', currentLang)}：</span>${notes.yanling}</div>`);
+            if(notes.retention) items.push(`<div class="bg-blue-50 border border-blue-100 rounded px-2 py-1 mt-1"><span class="font-bold text-blue-700">${convertText('留才方案', currentLang)}：</span>${notes.retention}</div>`);
+            if (!items.length && rec.lastNote) items.push(`<div>${rec.lastNote}</div>`);
+            return items.join('<hr class="my-1 border-gray-100">') || convertText('無紀錄', currentLang);
         }
 
         function updateVisualFlow(stepIndex, type, resultText = '') {
@@ -1104,7 +1132,16 @@
                 let statusColor = 'text-gray-500';
                 if(rec.outcomeType === 'retain') statusColor = 'text-green-600 font-bold';
                 if(rec.outcomeType === 'draft') statusColor = 'text-amber-500 font-bold'; 
-                tbody.innerHTML += `<tr><td class="px-4 py-3 text-gray-500">${rec.date}</td><td class="px-4 py-3 font-medium text-gray-900">${rec.emp}</td><td class="px-4 py-3 text-gray-500">${rec.handler}</td><td class="px-4 py-3 text-gray-500">${convertText(rec.stage, currentLang)}</td><td class="px-4 py-3 text-gray-500 max-w-xs truncate">${rec.lastNote}</td><td class="px-4 py-3 ${statusColor}">${convertText(rec.result, currentLang)}</td><td class="px-4 py-3 space-x-2"><button onclick="openEditModal('${rec.id}', ${index})" class="text-blue-600 hover:text-blue-800 text-xs border border-blue-200 px-2 py-1 rounded">${convertText('編輯', currentLang)}</button></td></tr>`;
+                const historyHtml = renderHistorySummary(rec);
+                tbody.innerHTML += `<tr>
+                    <td class="px-4 py-3 text-gray-500 align-top">${rec.date}</td>
+                    <td class="px-4 py-3 font-medium text-gray-900 align-top">${rec.emp}</td>
+                    <td class="px-4 py-3 text-gray-500 align-top">${rec.handler}</td>
+                    <td class="px-4 py-3 text-gray-500 align-top">${convertText(rec.stage, currentLang)}</td>
+                    <td class="px-4 py-3 text-gray-600 text-sm align-top">${historyHtml}</td>
+                    <td class="px-4 py-3 ${statusColor} align-top">${convertText(rec.result, currentLang)}</td>
+                    <td class="px-4 py-3 space-x-2 align-top"><button onclick="openEditModal('${rec.id}', ${index})" class="text-blue-600 hover:text-blue-800 text-xs border border-blue-200 px-2 py-1 rounded">${convertText('編輯', currentLang)}</button></td>
+                </tr>`;
             });
         };
 
@@ -1118,7 +1155,17 @@
             const id = document.getElementById('edit-id').value;
             const resType = document.getElementById('edit-result').value;
             let resText = convertText(resType === 'success' ? '成功留任' : (resType === 'fail' ? '留才失敗 (仍離職)' : (resType==='draft'?'進行中 (Draft)':'正常離職')), currentLang);
-            const data = { date: document.getElementById('edit-date').value, emp: document.getElementById('edit-emp').value, handler: document.getElementById('edit-handler').value, lastNote: document.getElementById('edit-note').value, outcomeType: resType === 'success' ? 'retain' : (resType==='draft'?'draft':'exit'), result: resText };
+            const existing = window.allRecords.find(r => r.id === id) || {};
+            const data = { 
+                date: document.getElementById('edit-date').value, 
+                emp: document.getElementById('edit-emp').value, 
+                handler: document.getElementById('edit-handler').value, 
+                lastNote: document.getElementById('edit-note').value, 
+                outcomeType: resType === 'success' ? 'retain' : (resType==='draft'?'draft':'exit'), 
+                result: resText,
+                history: existing.history || existing.draftSessionData ? (existing.history || existing.draftSessionData) : undefined
+            };
+            if(!data.history) delete data.history;
             if(window.updateDataInCloud) window.updateDataInCloud(id, data);
             closeEditModal(); 
         };
