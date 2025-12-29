@@ -7,9 +7,10 @@
     <script src="https://cdn.tailwindcss.com"></script>
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
-    <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+TC:wght@300;400;500;700&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+TC:wght@300;400;500;700&family=Noto+Sans+SC:wght@300;400;500;700&display=swap" rel="stylesheet">
     <style type="text/tailwindcss">
-        body { font-family: 'Noto Sans TC', sans-serif; background-color: #f3f4f6; color: #1f2937; }
+        body { font-family: 'Noto Sans TC', 'Noto Sans SC', 'PingFang TC', 'PingFang SC', 'Microsoft JhengHei', 'Microsoft YaHei', sans-serif; background-color: #f3f4f6; color: #1f2937; }
+        body.lang-simplified { font-family: 'Noto Sans SC', 'Noto Sans TC', 'PingFang SC', 'Microsoft YaHei', 'PingFang TC', 'Microsoft JhengHei', sans-serif; }
         .chart-container { position: relative; width: 100%; max-width: 600px; margin: 0 auto; height: 300px; max-height: 400px; }
         @media (min-width: 768px) { .chart-container { height: 350px; } }
         .step-node { transition: all 0.5s ease; }
@@ -403,7 +404,7 @@
                                     <th class="px-4 py-3 text-left text-xs font-bold text-gray-500 uppercase">人員</th>
                                     <th class="px-4 py-3 text-left text-xs font-bold text-gray-500 uppercase">處理人</th>
                                     <th class="px-4 py-3 text-left text-xs font-bold text-gray-500 uppercase">階段</th>
-                                    <th class="px-4 py-3 text-left text-xs font-bold text-gray-500 uppercase">備註</th>
+                                    <th class="px-4 py-3 text-left text-xs font-bold text-gray-500 uppercase">節點紀錄</th>
                                     <th class="px-4 py-3 text-left text-xs font-bold text-gray-500 uppercase">結果</th>
                                     <th class="px-4 py-3 text-left text-xs font-bold text-gray-500 uppercase">操作</th>
                                 </tr>
@@ -444,7 +445,7 @@
     <!-- Standard Script Block -->
     <script>
         // Versioning
-        const APP_VERSION = 'v1.0.6';
+        const APP_VERSION = 'v1.0.8';
 
         // Global State
         window.allRecords = []; 
@@ -695,6 +696,18 @@
             return deriveLastNoteForStep(stepKey);
         }
 
+        function buildHistoryPayload(data = currentSessionData) {
+            return {
+                meetingTime: data.meetingTime || '',
+                notes: {
+                    supervisor: data.notes?.supervisor || '',
+                    showRex: data.notes?.showRex || '',
+                    yanling: data.notes?.yanling || '',
+                    retention: data.notes?.retention || ''
+                }
+            };
+        }
+
         function updateDraftStatusBadge(text) {
             const badge = document.getElementById('draft-status');
             const label = document.getElementById('draft-status-text');
@@ -711,6 +724,7 @@
         document.addEventListener('DOMContentLoaded', () => {
             const versionTag = document.getElementById('app-version-tag');
             if (versionTag) versionTag.textContent = APP_VERSION;
+            applyLanguagePreferences();
             const localData = loadLocalRecords();
             if (localData.length) setAllRecords(localData);
             if (window.updateCharts) window.updateCharts();
@@ -733,6 +747,7 @@
 
             const existing = window.allRecords.find(r => r.id === window.currentDraftId);
             const lastNote = deriveLastNoteForStep(currentStepKey);
+            const history = buildHistoryPayload();
             const draftData = {
                 date: existing?.date || new Date().toISOString().split('T')[0],
                 emp: currentSessionData.empName,
@@ -742,7 +757,8 @@
                 result: '進行中 (Draft)',
                 outcomeType: 'draft',
                 draftStepKey: currentStepKey,
-                draftSessionData: JSON.parse(JSON.stringify(currentSessionData))
+                draftSessionData: JSON.parse(JSON.stringify(currentSessionData)),
+                history
             };
             
             if(window.saveDataToCloud) {
@@ -841,7 +857,12 @@
         const t2sMap = {}; const s2tMap = {}; 
         "離:离,職:职,面:面,談:谈,與:与,留:留,評:评,估:估,管:管,理:理,系:系,統:统,正:正,式:式,作:作,業:业,版:版,案:案,件:件,處:处,歷:历,史:史,紀:纪,錄:录,數:数,據:据,看:看,板:板,標:标,準:准,後:后,台:台,繁:繁,简:简,鎖:锁,員:员,提:提,出:出,向:向,直:直,屬:属,主:主,優:优,秀:秀,人:人,才:才,是:是,啟:启,動:动,程:程,序:序,否:否,轉:转,常:常,階:阶,分:分,析:析,因:因,素:素,工:工,薪:薪,資:资,判:判,斷:断,需:需,彥:彦,靈:灵,總:总,行:行,政:政,會:会,議:议,時:时,間:间,協:协,調:調,最:最,終:终,決:决,策:策,核:核,准:准,方:方,予:予,結:结,已:已,中:中,連:连,線:线,建:建,立:立,新:新,請:请,輸:输,入:入,訊:讯,流:流,將:将,自:自,檔:档,姓:姓,名:名,全:全,本:本,重:重,點:点,必:必,填:填,詳:详,細:細,歸:歸,顯:顯,示:示,近:近,筆:筆,完:完,整:整,日:日,期:期,關:關,鍵:鍵,備:備,註:註,結:結,果:果,漏:漏,斗:斗,處:處,置:置,布:布,圖:圖,徑:徑,參:參,考:考,敏:敏,感:感,存:存,取:取,權:權,限:限,驗:驗,證:證,管:管,員:員,帳:帳,號:號,碼:碼,登:登,錯:錯,誤:誤,覽:覽,匯:匯,報:報,表:表,操:操,編:編,輯:輯,儲:儲,變:變,更:更,公:公,司:司,內:內,部:部,模:模,組:組,警:警,告:告,確:確,定:定,清:清,除:除,此:此,無:無,法:法,復:複,原:原,確:確,認:認,有:有,無:無,資:資,料:料,可:可,安:安,排:排,選:選,擇:擇,仍:仍,敗:敗,幅:幅,度:度,還:還,份:份,載:載,片:片,刪:刪,暫:暫,續:續,辦:辦".split(',').forEach(p => { const [t, s] = p.split(':'); t2sMap[t] = s; s2tMap[s] = t; });
         function convertText(text, toLang) { let res = ''; for (let c of text) res += toLang === 'zh-CN' ? (t2sMap[c] || c) : (s2tMap[c] || c); return res; }
-        window.toggleLanguage = () => { currentLang = currentLang === 'zh-TW' ? 'zh-CN' : 'zh-TW'; walkAndConvert(document.body); window.updateCharts(); window.renderRecordsTable(); window.renderAdminTable(); };
+        function applyLanguagePreferences() {
+            const isSimplified = currentLang === 'zh-CN';
+            document.body.classList.toggle('lang-simplified', isSimplified);
+            document.documentElement.setAttribute('lang', isSimplified ? 'zh-CN' : 'zh-TW');
+        }
+        window.toggleLanguage = () => { currentLang = currentLang === 'zh-TW' ? 'zh-CN' : 'zh-TW'; applyLanguagePreferences(); walkAndConvert(document.body); window.updateCharts(); window.renderRecordsTable(); window.renderAdminTable(); };
         function walkAndConvert(node) { if(node.nodeType===3) node.nodeValue = convertText(node.nodeValue, currentLang); else { if(node.tagName==='INPUT'||node.tagName==='TEXTAREA') if(node.placeholder) node.placeholder = convertText(node.placeholder, currentLang); node.childNodes.forEach(walkAndConvert); } }
 
         function validateAndStart() {
@@ -925,7 +946,8 @@
                         result: config.result || config.title,
                         outcomeType: config.outcomeType,
                         draftStepKey: null,
-                        draftSessionData: null
+                        draftSessionData: null,
+                        history: buildHistoryPayload()
                     });
                 }
                 window.currentDraftId = null;
@@ -1010,6 +1032,19 @@
             `;
             document.getElementById('reset-area').classList.add('hidden');
             updateVisualFlow(0, 'reset');
+        }
+
+        function renderHistorySummary(rec) {
+            const source = rec.history || rec.draftSessionData || {};
+            const notes = source.notes || {};
+            const items = [];
+            if(notes.supervisor) items.push(`<div><span class="font-bold text-gray-600">${convertText('直屬主管', currentLang)}：</span>${notes.supervisor}</div>`);
+            if(notes.showRex) items.push(`<div><span class="font-bold text-gray-600">Show/Rex：</span>${notes.showRex}</div>`);
+            if(source.meetingTime) items.push(`<div><span class="font-bold text-gray-600">${convertText('Sammy 會議', currentLang)}：</span>${source.meetingTime.replace('T',' ')}</div>`);
+            if(notes.yanling) items.push(`<div><span class="font-bold text-gray-600">${convertText('彥靈總', currentLang)}：</span>${notes.yanling}</div>`);
+            if(notes.retention) items.push(`<div class="bg-blue-50 border border-blue-100 rounded px-2 py-1 mt-1"><span class="font-bold text-blue-700">${convertText('留才方案', currentLang)}：</span>${notes.retention}</div>`);
+            if (!items.length && rec.lastNote) items.push(`<div>${rec.lastNote}</div>`);
+            return items.join('<hr class="my-1 border-gray-100">') || convertText('無紀錄', currentLang);
         }
 
         function updateVisualFlow(stepIndex, type, resultText = '') {
@@ -1097,7 +1132,16 @@
                 let statusColor = 'text-gray-500';
                 if(rec.outcomeType === 'retain') statusColor = 'text-green-600 font-bold';
                 if(rec.outcomeType === 'draft') statusColor = 'text-amber-500 font-bold'; 
-                tbody.innerHTML += `<tr><td class="px-4 py-3 text-gray-500">${rec.date}</td><td class="px-4 py-3 font-medium text-gray-900">${rec.emp}</td><td class="px-4 py-3 text-gray-500">${rec.handler}</td><td class="px-4 py-3 text-gray-500">${convertText(rec.stage, currentLang)}</td><td class="px-4 py-3 text-gray-500 max-w-xs truncate">${rec.lastNote}</td><td class="px-4 py-3 ${statusColor}">${convertText(rec.result, currentLang)}</td><td class="px-4 py-3 space-x-2"><button onclick="openEditModal('${rec.id}', ${index})" class="text-blue-600 hover:text-blue-800 text-xs border border-blue-200 px-2 py-1 rounded">${convertText('編輯', currentLang)}</button></td></tr>`;
+                const historyHtml = renderHistorySummary(rec);
+                tbody.innerHTML += `<tr>
+                    <td class="px-4 py-3 text-gray-500 align-top">${rec.date}</td>
+                    <td class="px-4 py-3 font-medium text-gray-900 align-top">${rec.emp}</td>
+                    <td class="px-4 py-3 text-gray-500 align-top">${rec.handler}</td>
+                    <td class="px-4 py-3 text-gray-500 align-top">${convertText(rec.stage, currentLang)}</td>
+                    <td class="px-4 py-3 text-gray-600 text-sm align-top">${historyHtml}</td>
+                    <td class="px-4 py-3 ${statusColor} align-top">${convertText(rec.result, currentLang)}</td>
+                    <td class="px-4 py-3 space-x-2 align-top"><button onclick="openEditModal('${rec.id}', ${index})" class="text-blue-600 hover:text-blue-800 text-xs border border-blue-200 px-2 py-1 rounded">${convertText('編輯', currentLang)}</button></td>
+                </tr>`;
             });
         };
 
@@ -1111,7 +1155,17 @@
             const id = document.getElementById('edit-id').value;
             const resType = document.getElementById('edit-result').value;
             let resText = convertText(resType === 'success' ? '成功留任' : (resType === 'fail' ? '留才失敗 (仍離職)' : (resType==='draft'?'進行中 (Draft)':'正常離職')), currentLang);
-            const data = { date: document.getElementById('edit-date').value, emp: document.getElementById('edit-emp').value, handler: document.getElementById('edit-handler').value, lastNote: document.getElementById('edit-note').value, outcomeType: resType === 'success' ? 'retain' : (resType==='draft'?'draft':'exit'), result: resText };
+            const existing = window.allRecords.find(r => r.id === id) || {};
+            const data = { 
+                date: document.getElementById('edit-date').value, 
+                emp: document.getElementById('edit-emp').value, 
+                handler: document.getElementById('edit-handler').value, 
+                lastNote: document.getElementById('edit-note').value, 
+                outcomeType: resType === 'success' ? 'retain' : (resType==='draft'?'draft':'exit'), 
+                result: resText,
+                history: existing.history || existing.draftSessionData ? (existing.history || existing.draftSessionData) : undefined
+            };
+            if(!data.history) delete data.history;
             if(window.updateDataInCloud) window.updateDataInCloud(id, data);
             closeEditModal(); 
         };
