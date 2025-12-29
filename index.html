@@ -308,7 +308,10 @@
                         <h4 class="font-bold text-gray-800 text-sm">離職去向 Top 5</h4>
                         <span class="text-xs text-gray-500">僅計算離職結果的案件</span>
                     </div>
-                    <ul id="destinations-list" class="divide-y divide-gray-100"></ul>
+                    <div class="chart-container">
+                        <canvas id="chart-destination"></canvas>
+                    </div>
+                    <p id="destinations-empty" class="text-center text-sm text-gray-500 mt-3 hidden">${convertText('目前無離職去向資料', currentLang)}</p>
                 </div>
             </div>
         </section>
@@ -477,7 +480,7 @@
     <!-- Standard Script Block -->
     <script>
         // Versioning
-        const APP_VERSION = 'v1.0.15';
+        const APP_VERSION = 'v1.0.16';
 
         // Global State
         window.allRecords = []; 
@@ -485,6 +488,7 @@
         let currentStepKey = 'start';
         let retentionChartInstance = null;
         let outcomeChartInstance = null;
+        let destinationChartInstance = null;
         let currentLang = 'zh-TW';
         window.currentDraftId = null;
 
@@ -578,15 +582,37 @@
             });
         }
 
-        function renderDestinationList(stats) {
-            const container = document.getElementById('destinations-list');
-            if(!container) return;
+        function renderDestinationChart(stats) {
+            const canvas = document.getElementById('chart-destination');
+            const empty = document.getElementById('destinations-empty');
+            if(!canvas || typeof Chart === 'undefined') return;
+            const ctx = canvas.getContext('2d');
             const entries = Object.entries(stats.destinationMap || {}).sort((a,b) => b[1]-a[1]).slice(0,5);
             if(entries.length === 0) {
-                container.innerHTML = `<li class="text-gray-500 text-sm">${convertText('目前無離職去向資料', currentLang)}</li>`;
+                if(empty) empty.classList.remove('hidden');
+                if(destinationChartInstance) destinationChartInstance.destroy();
                 return;
             }
-            container.innerHTML = entries.map(([name,count]) => `<li class="flex justify-between text-sm text-gray-700 border-b border-gray-100 py-1"><span class="font-medium">${convertText(name,currentLang)}</span><span class="text-blue-700 font-bold">${count}</span></li>`).join('');
+            if(empty) empty.classList.add('hidden');
+            const labels = entries.map(e => convertText(e[0], currentLang));
+            const values = entries.map(e => e[1]);
+            if(destinationChartInstance) destinationChartInstance.destroy();
+            destinationChartInstance = new Chart(ctx, {
+                type: 'bar',
+                data: {
+                    labels,
+                    datasets: [{
+                        label: convertText('離職去向', currentLang),
+                        data: values,
+                        backgroundColor: '#f59e0b'
+                    }]
+                },
+                options: {
+                    indexAxis: 'y',
+                    scales: { x: { beginAtZero: true, ticks: { precision:0 } } },
+                    plugins: { legend: { display: false } }
+                }
+            });
         }
 
         let analyticsYear = 'all';
@@ -625,7 +651,7 @@
             updateAnalyticsCards(stats);
             renderOutcomeChart(stats);
             renderStageChart(stats);
-            renderDestinationList(stats);
+            renderDestinationChart(stats);
         };
 
         function isPlaceholderFirebaseConfig(cfg) {
