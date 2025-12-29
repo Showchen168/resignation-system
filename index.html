@@ -69,6 +69,10 @@
                         Github Deployment Version
                     </span>
                     <span class="text-xs text-gray-500 font-medium">版本：<span id="app-version-tag">載入中</span></span>
+                    <div class="flex items-center gap-2 mt-1">
+                        <span id="connection-badge" class="text-[11px] font-bold px-2 py-[2px] rounded bg-yellow-100 text-yellow-800 border border-yellow-300">狀態：檢查中</span>
+                        <span id="sync-hint" class="text-[11px] text-gray-500">雲端同步時間：尚未同步</span>
+                    </div>
                 </div>
             </div>
             <nav class="hidden md:flex space-x-4 text-sm font-medium text-gray-600 items-center">
@@ -440,7 +444,7 @@
     <!-- Standard Script Block -->
     <script>
         // Versioning
-        const APP_VERSION = 'v1.0.5';
+        const APP_VERSION = 'v1.0.6';
 
         // Global State
         window.allRecords = []; 
@@ -604,6 +608,7 @@
             const fallback = loadLocalRecords();
             setAllRecords(fallback);
             if(reason) console.warn(`已切換離線備份模式：${reason}`);
+            updateConnectionBadge(false, reason);
         }
         function upsertLocalRecord(record, isDraft = false, showAlert = true) {
             const records = loadLocalRecords();
@@ -615,12 +620,31 @@
             setAllRecords(records);
             if (isDraft) window.currentDraftId = recordId;
             if (showAlert) alert(isDraft ? "✅ 已暫存（離線備份）" : "✅ 已儲存（離線備份）");
+            updateConnectionBadge(false, '本機離線暫存');
         }
         function deleteLocalRecord(id, showAlert = true) {
             const records = loadLocalRecords().filter(r => r.id !== id);
             persistLocalRecords(records);
             setAllRecords(records);
             if (showAlert) alert("🗑️ 已刪除（離線備份）");
+            updateConnectionBadge(false, '本機離線暫存');
+        }
+        // 連線狀態顯示
+        let lastCloudSync = null;
+        function updateConnectionBadge(isOnline, note = '') {
+            const badge = document.getElementById('connection-badge');
+            const hint = document.getElementById('sync-hint');
+            if (!badge || !hint) return;
+            const timeText = lastCloudSync ? new Date(lastCloudSync).toLocaleString() : '尚未同步';
+            if (isOnline) {
+                badge.textContent = '狀態：已連線 Firebase';
+                badge.className = 'text-[11px] font-bold px-2 py-[2px] rounded bg-green-100 text-green-800 border border-green-300';
+                hint.textContent = `雲端同步時間：${timeText}`;
+            } else {
+                badge.textContent = '狀態：離線備份模式';
+                badge.className = 'text-[11px] font-bold px-2 py-[2px] rounded bg-amber-100 text-amber-800 border border-amber-300';
+                hint.textContent = `雲端同步時間：${timeText}${note ? `（${note}）` : ''}`;
+            }
         }
 
         // Flow Configuration
@@ -690,6 +714,7 @@
             const localData = loadLocalRecords();
             if (localData.length) setAllRecords(localData);
             if (window.updateCharts) window.updateCharts();
+            updateConnectionBadge(!useLocalStorage);
         });
 
         // --- CORE LOGIC: Save & Load ---
@@ -1186,6 +1211,7 @@
                     if (user) {
                         currentUser = user;
                         subscribeToData();
+                        updateConnectionBadge(true, '已登入');
                     }
                 });
             } catch (e) {
@@ -1201,6 +1227,8 @@
             onSnapshot(q, (snapshot) => {
                 const data = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
                 setAllRecords(data);
+                lastCloudSync = Date.now();
+                updateConnectionBadge(true, '已同步雲端');
             });
         }
 
@@ -1220,6 +1248,8 @@
                     if(isDraft) window.currentDraftId = ref.id;
                     if(showAlert) alert(isDraft ? "✅ 新案件已暫存！" : "案件已建立！");
                 }
+                lastCloudSync = Date.now();
+                updateConnectionBadge(true, '雲端儲存成功');
             } catch (e) { 
                 console.error("Save Error", e); 
                 initializeLocalMode('雲端儲存失敗，已改用本機暫存');
