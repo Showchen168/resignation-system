@@ -14,6 +14,9 @@
         .chart-container { position: relative; width: 100%; max-width: 600px; margin: 0 auto; height: 300px; max-height: 400px; }
         @media (min-width: 768px) { .chart-container { height: 350px; } }
         .step-node { transition: all 0.5s ease; }
+        .history-cell { @apply bg-gray-50 border border-gray-200 rounded-lg p-3 text-sm leading-relaxed max-h-32 overflow-y-auto shadow-inner; }
+        .history-item { @apply mb-1; }
+        .history-badge { @apply inline-block text-xs font-bold text-blue-700 bg-blue-50 border border-blue-200 rounded px-2 py-0.5; }
         /* Buttons */
         .btn-primary { @apply bg-blue-700 text-white px-4 py-2 rounded hover:bg-blue-800 transition-colors duration-200 shadow-sm font-medium flex items-center justify-center; }
         .btn-save { @apply bg-amber-100 border border-amber-300 text-amber-800 px-4 py-2 rounded hover:bg-amber-200 transition-colors duration-200 font-medium flex items-center justify-center; }
@@ -445,7 +448,7 @@
     <!-- Standard Script Block -->
     <script>
         // Versioning
-        const APP_VERSION = 'v1.0.8';
+        const APP_VERSION = 'v1.0.9';
 
         // Global State
         window.allRecords = []; 
@@ -1047,6 +1050,11 @@
             return items.join('<hr class="my-1 border-gray-100">') || convertText('無紀錄', currentLang);
         }
 
+        function renderHistorySummaryCompact(rec) {
+            const html = renderHistorySummary(rec);
+            return `<div class="history-cell">${html}</div>`;
+        }
+
         function updateVisualFlow(stepIndex, type, resultText = '') {
             const steps = [1, 2, 3, 4, 5];
             const resultBox = document.getElementById('v-result');
@@ -1132,7 +1140,7 @@
                 let statusColor = 'text-gray-500';
                 if(rec.outcomeType === 'retain') statusColor = 'text-green-600 font-bold';
                 if(rec.outcomeType === 'draft') statusColor = 'text-amber-500 font-bold'; 
-                const historyHtml = renderHistorySummary(rec);
+                const historyHtml = renderHistorySummaryCompact(rec);
                 tbody.innerHTML += `<tr>
                     <td class="px-4 py-3 text-gray-500 align-top">${rec.date}</td>
                     <td class="px-4 py-3 font-medium text-gray-900 align-top">${rec.emp}</td>
@@ -1175,13 +1183,25 @@
                 closeEditModal();
             }
         };
+        function flattenHistoryText(rec) {
+            const source = rec.history || rec.draftSessionData || {};
+            const notes = source.notes || {};
+            const parts = [];
+            if(notes.supervisor) parts.push(`直屬主管:${notes.supervisor}`);
+            if(notes.showRex) parts.push(`Show/Rex:${notes.showRex}`);
+            if(source.meetingTime) parts.push(`Sammy 會議:${source.meetingTime.replace('T',' ')}`);
+            if(notes.yanling) parts.push(`彥靈總:${notes.yanling}`);
+            if(notes.retention) parts.push(`留才方案:${notes.retention}`);
+            if(!parts.length && rec.lastNote) parts.push(rec.lastNote);
+            return parts.join(" | ");
+        }
         window.exportToCSV = () => { 
             const data = window.allRecords || []; 
             if(!data.length){ alert('No Data'); return; } 
-            let c = "\ufeff" + ['日期','人員','處理人','階段','備註','結果'].map(h=>convertText(h,currentLang)).join(',') + "\n"; 
+            let c = "\ufeff" + ['日期','人員','處理人','階段','節點紀錄','結果'].map(h=>convertText(h,currentLang)).join(',') + "\n"; 
             data.forEach(r => { 
-                const safeNote = (r.lastNote || '').replace(/"/g,'""'); 
-                c += [r.date, r.emp, r.handler, r.stage, `"${safeNote}"`, r.result].join(',') + "\n"; 
+                const historyText = flattenHistoryText(r).replace(/"/g,'""'); 
+                c += [r.date, r.emp, r.handler, r.stage, `"${historyText}"`, r.result].join(',') + "\n"; 
             }); 
             const b = new Blob([c],{type:"text/csv;charset=utf-8;"}); 
             const l = document.createElement("a"); 
