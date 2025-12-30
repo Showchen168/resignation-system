@@ -500,7 +500,7 @@
     <!-- Standard Script Block -->
     <script>
         // Versioning
-        const APP_VERSION = 'v1.0.17';
+        const APP_VERSION = 'v1.0.18';
 
         // Global State
         window.allRecords = []; 
@@ -908,13 +908,15 @@
 
         // --- CORE LOGIC: Save & Load ---
 
-        window.saveDraft = async function(showAlert = true) {
+        window.saveDraft = async function(showAlert = true, allowIncomplete = false) {
             let emp = document.getElementById('emp-name').value.trim();
             let role = document.getElementById('emp-role').value.trim();
             let sup = document.getElementById('sup-name').value.trim();
             if(!emp || !sup || !role) {
-                alert("請至少輸入人員姓名、崗位與主管姓名才能暫存。");
-                return;
+                if (!allowIncomplete && showAlert) {
+                    alert("請至少輸入人員姓名、崗位與主管姓名才能暫存。");
+                }
+                return false;
             }
 
             currentSessionData.empName = emp;
@@ -947,9 +949,11 @@
                 } else {
                     alert("資料庫尚未連線，請稍候...");
                 }
+                return true;
             } catch (err){
                 console.error('Draft save failed', err);
                 alert(convertText('暫存失敗，請稍後再試', currentLang));
+                return false;
             }
         };
 
@@ -1070,9 +1074,24 @@
             transitionTo('supervisor');
         }
 
+        function renderStartActionArea() {
+            const actArea = document.getElementById('action-area');
+            if (!actArea) return;
+            actArea.innerHTML = `
+                <div class="space-y-2">
+                    <button class="w-full btn-primary" onclick="validateAndStart()">
+                        <span class="mr-2">＋</span> ${convertText('建立案件並開始評估', currentLang)}
+                    </button>
+                    <button class="w-full btn-save" onclick="saveDraft(true)">
+                        <span class="mr-2">💾</span> ${convertText('暫存目前資料', currentLang)}
+                    </button>
+                </div>
+            `;
+        }
+
         function transitionTo(targetKey) {
             currentStepKey = targetKey;
-            const config = flowConfig[targetKey];
+            const config = flowConfig[targetKey] || flowConfig.start;
             
             // Title & Desc
             document.getElementById('step-title').textContent = config.title;
@@ -1084,6 +1103,18 @@
             const hArea = document.getElementById('notes-history-area');
             const nLabel = document.getElementById('notes-label');
             
+            if (targetKey === 'start') {
+                document.getElementById('input-area-start').classList.remove('hidden');
+                document.getElementById('input-area-notes').classList.add('hidden');
+                document.getElementById('input-area-meeting').classList.add('hidden');
+                document.getElementById('notes-history-area').classList.add('hidden');
+                document.getElementById('case-info').classList.add('hidden');
+                renderStartActionArea();
+                document.getElementById('reset-area').classList.add('hidden');
+                updateVisualFlow(config.visualStep || 0, 'reset');
+                return;
+            }
+
             document.getElementById('current-notes').value = '';
             // Pre-fill
             if(targetKey === 'supervisor' && currentSessionData.notes?.supervisor) document.getElementById('current-notes').value = currentSessionData.notes.supervisor;
@@ -1148,7 +1179,8 @@
                 document.getElementById('reset-area').classList.add('hidden');
                 
                 // 1. Next Step Buttons
-                config.next.forEach(btn => {
+                const nextButtons = Array.isArray(config.next) ? config.next : [];
+                nextButtons.forEach(btn => {
                     const b = document.createElement('button');
                     b.textContent = btn.label;
                     b.className = btn.style === 'primary' || btn.style === 'success' ? 'w-full btn-primary mb-3 pl-6' : 'w-full btn-outline mb-3 bg-white pl-6';
@@ -1160,7 +1192,7 @@
 
                         // Checkpoint Save (Silent)
                         if(window.saveDataToCloud) {
-                            window.saveDraft(false);
+                            window.saveDraft(false, true);
                         }
                         transitionTo(btn.target);
                     };
@@ -1182,7 +1214,7 @@
                     backBtn.innerHTML = `⬅️ ${convertText('回上一步', currentLang)}`;
                     backBtn.className = 'btn-back';
                     backBtn.onclick = () => {
-                        window.saveDraft(false); // Silent Save
+                        window.saveDraft(false, true); // Silent Save
                         transitionTo(config.prev);
                     };
                     actArea.appendChild(backBtn);
@@ -1211,17 +1243,7 @@
             document.getElementById('step-title').textContent = config.title;
             document.getElementById('step-desc').textContent = config.desc;
             
-            const actArea = document.getElementById('action-area');
-            actArea.innerHTML = `
-                <div class="space-y-2">
-                    <button class="w-full btn-primary" onclick="validateAndStart()">
-                        <span class="mr-2">＋</span> ${convertText('建立案件並開始評估', currentLang)}
-                    </button>
-                    <button class="w-full btn-save" onclick="saveDraft()">
-                        <span class="mr-2">💾</span> ${convertText('暫存目前資料', currentLang)}
-                    </button>
-                </div>
-            `;
+            renderStartActionArea();
             document.getElementById('reset-area').classList.add('hidden');
             updateVisualFlow(0, 'reset');
         }
