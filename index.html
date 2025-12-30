@@ -88,7 +88,7 @@
                 <button onclick="toggleLanguage()" class="border border-blue-300 text-blue-600 hover:bg-blue-50 px-3 py-1 rounded transition-colors flex items-center">
                     <span class="text-xs mr-1">🌐</span> <span id="lang-btn-text">繁/简</span>
                 </button>
-                <a href="#admin-panel" class="text-blue-600 hover:text-blue-800 font-bold flex items-center bg-blue-50 px-3 py-1 rounded-full">
+                <a id="admin-nav-link" href="#admin-panel" class="text-blue-600 hover:text-blue-800 font-bold flex items-center bg-blue-50 px-3 py-1 rounded-full">
                     <span class="mr-1">🔒</span> 管理後台
                 </a>
             </nav>
@@ -448,7 +448,7 @@
         </section>
         
         <!-- ADMIN PANEL SECTION -->
-        <section id="admin-panel" class="py-16 bg-gray-800 text-white rounded-t-3xl mt-8">
+        <section id="admin-panel" class="hidden py-16 bg-gray-800 text-white rounded-t-3xl mt-8">
             <div class="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8">
                 <div class="mb-8 text-center">
                     <h3 class="text-2xl font-bold flex items-center justify-center"><span class="mr-2">🔒</span> 管理後台</h3>
@@ -536,7 +536,7 @@
     <!-- Standard Script Block -->
     <script>
         // Versioning
-        const APP_VERSION = 'v1.0.19';
+        const APP_VERSION = 'v1.0.20';
 
         // Global State
         window.allRecords = []; 
@@ -1025,6 +1025,24 @@
             renderAnalyticsYearOptions();
             if (window.updateCharts) window.updateCharts();
             updateConnectionBadge(!useLocalStorage);
+
+            const adminPanel = document.getElementById('admin-panel');
+            const adminLink = document.getElementById('admin-nav-link');
+            const revealAdminPanel = (scroll = false) => {
+                if (!adminPanel) return;
+                adminPanel.classList.remove('hidden');
+                if (scroll) adminPanel.scrollIntoView({ behavior: 'smooth' });
+            };
+            if (location.hash === '#admin-panel') {
+                revealAdminPanel();
+            }
+            if (adminLink && adminPanel) {
+                adminLink.addEventListener('click', (e) => {
+                    e.preventDefault();
+                    revealAdminPanel(true);
+                    history.replaceState(null, '', '#admin-panel');
+                });
+            }
         });
 
         // --- CORE LOGIC: Save & Load ---
@@ -1673,6 +1691,7 @@
         let app, auth, db;
         const appId = typeof __app_id !== 'undefined' ? __app_id : 'resignation-app-v1';
         let currentUser = null;
+        const getRecordsCollectionRef = () => collection(db, 'artifacts', appId, 'resignation_records');
 
         async function initAuth() {
             if (useLocalStorage) return;
@@ -1711,7 +1730,7 @@
 
         function subscribeToData() {
             if (!currentUser || useLocalStorage) return;
-            const q = collection(db, 'artifacts', appId, 'users', currentUser.uid, 'resignation_records');
+            const q = query(getRecordsCollectionRef(), orderBy('date', 'desc'));
             onSnapshot(q, (snapshot) => {
                 const data = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
                 setAllRecords(data);
@@ -1728,11 +1747,11 @@
             }
             try {
                 if (window.currentDraftId) {
-                    const docRef = doc(db, 'artifacts', appId, 'users', currentUser.uid, 'resignation_records', window.currentDraftId);
+                    const docRef = doc(db, 'artifacts', appId, 'resignation_records', window.currentDraftId);
                     await updateDoc(docRef, record);
                     if(showAlert) alert(isDraft ? "✅ 進度已暫存！" : "案件已更新並結案！");
                 } else {
-                    const ref = await addDoc(collection(db, 'artifacts', appId, 'users', currentUser.uid, 'resignation_records'), record);
+                    const ref = await addDoc(getRecordsCollectionRef(), record);
                     if(isDraft) window.currentDraftId = ref.id;
                     if(showAlert) alert(isDraft ? "✅ 新案件已暫存！" : "案件已建立！");
                 }
@@ -1750,7 +1769,7 @@
                 if (!useLocalStorage && !currentUser) initializeLocalMode('尚未取得登入憑證，暫存於本機');
                 return upsertLocalRecord({ ...(loadLocalRecords().find(r => r.id === id) || {}), ...updatedData, id }, false, true);
             }
-            const docRef = doc(db, 'artifacts', appId, 'users', currentUser.uid, 'resignation_records', id);
+            const docRef = doc(db, 'artifacts', appId, 'resignation_records', id);
             try { await updateDoc(docRef, updatedData); alert("✅ 更新成功"); } catch (e) { alert("❌ 更新失敗"); }
         };
 
@@ -1759,7 +1778,7 @@
                 if (!useLocalStorage && !currentUser) initializeLocalMode('尚未取得登入憑證，暫存於本機');
                 return deleteLocalRecord(id, true);
             }
-            const docRef = doc(db, 'artifacts', appId, 'users', currentUser.uid, 'resignation_records', id);
+            const docRef = doc(db, 'artifacts', appId, 'resignation_records', id);
             try { await deleteDoc(docRef); alert("🗑️ 資料已刪除"); } catch (e) { alert("❌ 刪除失敗"); }
         };
         
@@ -1771,7 +1790,7 @@
             let count = 0;
             for (const rec of records) {
                 const { id, ...data } = rec; 
-                await addDoc(collection(db, 'artifacts', appId, 'users', currentUser.uid, 'resignation_records'), data);
+                await addDoc(getRecordsCollectionRef(), data);
                 count++;
             }
             return count;
