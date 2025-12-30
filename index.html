@@ -133,6 +133,10 @@
                                     <input type="text" id="emp-name" class="input-field" placeholder="請輸入全名">
                                 </div>
                                 <div>
+                                    <label class="block text-xs font-bold text-gray-500 mb-1">離職人員崗位 <span class="text-red-500">*</span></label>
+                                    <input type="text" id="emp-role" class="input-field" placeholder="請輸入目前崗位/職稱">
+                                </div>
+                                <div>
                                     <label class="block text-xs font-bold text-gray-500 mb-1">直屬主管姓名 <span class="text-red-500">*</span></label>
                                     <input type="text" id="sup-name" class="input-field" placeholder="請輸入全名">
                                 </div>
@@ -182,6 +186,9 @@
                             <div class="flex items-center">
                                 <span class="w-2 h-2 bg-blue-500 rounded-full mr-2"></span>
                                 <span>人員: <strong id="v-emp-name" class="text-lg mr-4"></strong></span>
+                            </div>
+                            <div class="text-gray-600">
+                                崗位: <strong id="v-emp-role" class="mr-4"></strong>
                             </div>
                             <div class="text-gray-600">
                                 主管: <strong id="v-sup-name"></strong>
@@ -236,6 +243,7 @@
                         <tr>
                             <th class="px-6 py-3 text-left text-xs font-bold text-gray-500 uppercase">日期</th>
                             <th class="px-6 py-3 text-left text-xs font-bold text-gray-500 uppercase">離職人員</th>
+                            <th class="px-6 py-3 text-left text-xs font-bold text-gray-500 uppercase">崗位</th>
                             <th class="px-6 py-3 text-left text-xs font-bold text-gray-500 uppercase">處理人</th>
                             <th class="px-6 py-3 text-left text-xs font-bold text-gray-500 uppercase">階段</th>
                             <th class="px-6 py-3 text-left text-xs font-bold text-gray-500 uppercase">狀態/結果</th>
@@ -302,7 +310,7 @@
                     </div>
                 </div>
             </div>
-            <div class="p-6">
+            <div class="p-6 grid grid-cols-1 lg:grid-cols-2 gap-6">
                 <div class="bg-gray-50 border border-gray-200 rounded-lg p-4">
                     <div class="flex items-center justify-between mb-3">
                         <h4 class="font-bold text-gray-800 text-sm">離職去向 Top 5</h4>
@@ -312,6 +320,16 @@
                         <canvas id="chart-destination"></canvas>
                     </div>
                     <p id="destinations-empty" class="text-center text-sm text-gray-500 mt-3 hidden">${convertText('目前無離職去向資料', currentLang)}</p>
+                </div>
+                <div class="bg-gray-50 border border-gray-200 rounded-lg p-4">
+                    <div class="flex items-center justify-between mb-3">
+                        <h4 class="font-bold text-gray-800 text-sm">離職/留任崗位分布</h4>
+                        <span class="text-xs text-gray-500">僅計算已結案 (留任/離職)</span>
+                    </div>
+                    <div class="chart-container">
+                        <canvas id="chart-role"></canvas>
+                    </div>
+                    <p id="role-empty" class="text-center text-sm text-gray-500 mt-3 hidden">${convertText('目前無崗位資料', currentLang)}</p>
                 </div>
             </div>
         </section>
@@ -426,6 +444,7 @@
                                 <tr>
                                     <th class="px-4 py-3 text-left text-xs font-bold text-gray-500 uppercase">日期</th>
                                     <th class="px-4 py-3 text-left text-xs font-bold text-gray-500 uppercase">人員</th>
+                                    <th class="px-4 py-3 text-left text-xs font-bold text-gray-500 uppercase">崗位</th>
                                     <th class="px-4 py-3 text-left text-xs font-bold text-gray-500 uppercase">處理人</th>
                     <th class="px-4 py-3 text-left text-xs font-bold text-gray-500 uppercase">階段</th>
                     <th class="px-4 py-3 text-left text-xs font-bold text-gray-500 uppercase">離職去向</th>
@@ -452,6 +471,7 @@
                     <input type="hidden" id="edit-id">
                     <div><label class="block text-xs font-bold text-gray-500 mb-1">建檔日期</label><input type="date" id="edit-date" class="input-field bg-gray-100" readonly></div>
                     <div><label class="block text-xs font-bold text-gray-500 mb-1">離職人員</label><input type="text" id="edit-emp" class="input-field"></div>
+                    <div><label class="block text-xs font-bold text-gray-500 mb-1">崗位</label><input type="text" id="edit-role" class="input-field" placeholder="例：前端工程師"></div>
                     <div><label class="block text-xs font-bold text-gray-500 mb-1">最後處理人</label><input type="text" id="edit-handler" class="input-field"></div>
                     <div><label class="block text-xs font-bold text-gray-500 mb-1">目前階段</label><input type="text" id="edit-stage" class="input-field" placeholder="如：留才確認 / 彥靈總 / 直屬主管"></div>
                     <div><label class="block text-xs font-bold text-gray-500 mb-1">離職後去向（公司）</label><input type="text" id="edit-next-company" class="input-field" placeholder="例：Google / AWS / 其他"></div>
@@ -480,15 +500,16 @@
     <!-- Standard Script Block -->
     <script>
         // Versioning
-        const APP_VERSION = 'v1.0.16';
+        const APP_VERSION = 'v1.0.17';
 
         // Global State
         window.allRecords = []; 
-        let currentSessionData = { empName: '', supName: '', meetingTime: '', notes: { supervisor: '', showRex: '', yanling: '', retention: '' } };
+        let currentSessionData = { empName: '', role: '', supName: '', meetingTime: '', notes: { supervisor: '', showRex: '', yanling: '', retention: '' } };
         let currentStepKey = 'start';
         let retentionChartInstance = null;
         let outcomeChartInstance = null;
         let destinationChartInstance = null;
+        let roleChartInstance = null;
         let currentLang = 'zh-TW';
         window.currentDraftId = null;
 
@@ -512,6 +533,7 @@
             const successRate = closed ? Math.round((retain / closed) * 100) : 0;
             const stageMap = {};
             const destinationMap = {};
+            const roleStats = {};
             records.forEach(r => {
                 const key = r.stage || '未標示階段';
                 stageMap[key] = (stageMap[key] || 0) + 1;
@@ -519,8 +541,14 @@
                     const dest = r.nextCompany.trim();
                     if(dest) destinationMap[dest] = (destinationMap[dest] || 0) + 1;
                 }
+                if(r.outcomeType !== 'draft'){
+                    const roleKey = (r.role || '未填寫崗位').trim() || '未填寫崗位';
+                    if(!roleStats[roleKey]) roleStats[roleKey] = { retain: 0, exit: 0 };
+                    if(r.outcomeType === 'retain') roleStats[roleKey].retain += 1;
+                    else roleStats[roleKey].exit += 1;
+                }
             });
-            return { total, drafts, retain, exit, closed, successRate, stageMap, destinationMap };
+            return { total, drafts, retain, exit, closed, successRate, stageMap, destinationMap, roleStats };
         }
 
         function updateAnalyticsCards(stats) {
@@ -614,6 +642,44 @@
                 }
             });
         }
+        function renderRoleChart(stats){
+            const canvas = document.getElementById('chart-role');
+            const empty = document.getElementById('role-empty');
+            if(!canvas || typeof Chart === 'undefined') return;
+            const ctx = canvas.getContext('2d');
+            const entries = Object.entries(stats.roleStats || {}).map(([role, data]) => ({ role, retain: data.retain || 0, exit: data.exit || 0 }))
+                .filter(item => item.retain + item.exit > 0)
+                .sort((a,b) => (b.retain + b.exit) - (a.retain + a.exit))
+                .slice(0,8);
+            if(entries.length === 0){
+                if(empty) empty.classList.remove('hidden');
+                if(roleChartInstance) roleChartInstance.destroy();
+                return;
+            }
+            if(empty) empty.classList.add('hidden');
+            const labels = entries.map(e => convertText(e.role, currentLang));
+            const retainData = entries.map(e => e.retain);
+            const exitData = entries.map(e => e.exit);
+            if(roleChartInstance) roleChartInstance.destroy();
+            roleChartInstance = new Chart(ctx, {
+                type: 'bar',
+                data: {
+                    labels,
+                    datasets: [
+                        { label: convertText('留任', currentLang), data: retainData, backgroundColor: '#16a34a', stack: 'role' },
+                        { label: convertText('離職', currentLang), data: exitData, backgroundColor: '#dc2626', stack: 'role' }
+                    ]
+                },
+                options: {
+                    indexAxis: 'y',
+                    scales: { 
+                        x: { beginAtZero: true, ticks: { precision:0 }, stacked: true },
+                        y: { stacked: true }
+                    },
+                    plugins: { legend: { position: 'bottom' } }
+                }
+            });
+        }
 
         let analyticsYear = 'all';
         function getFilteredRecordsForAnalytics() {
@@ -651,6 +717,7 @@
             updateAnalyticsCards(stats);
             renderOutcomeChart(stats);
             renderStageChart(stats);
+            renderRoleChart(stats);
             renderDestinationChart(stats);
         };
 
@@ -841,15 +908,17 @@
 
         // --- CORE LOGIC: Save & Load ---
 
-        window.saveDraft = function(showAlert = true) {
+        window.saveDraft = async function(showAlert = true) {
             let emp = document.getElementById('emp-name').value.trim();
+            let role = document.getElementById('emp-role').value.trim();
             let sup = document.getElementById('sup-name').value.trim();
-            if(!emp || !sup) {
-                alert("請至少輸入人員姓名與主管姓名才能暫存。");
+            if(!emp || !sup || !role) {
+                alert("請至少輸入人員姓名、崗位與主管姓名才能暫存。");
                 return;
             }
 
             currentSessionData.empName = emp;
+            currentSessionData.role = role;
             currentSessionData.supName = sup;
             syncCurrentStepInputs();
 
@@ -859,6 +928,7 @@
             const draftData = {
                 date: existing?.date || new Date().toISOString().split('T')[0],
                 emp: currentSessionData.empName,
+                role: currentSessionData.role,
                 handler: currentSessionData.supName,
                 stage: flowConfig[currentStepKey]?.stageName || '案件建立',
                 lastNote,
@@ -869,11 +939,17 @@
                 history
             };
             
-            if(window.saveDataToCloud) {
-                window.saveDataToCloud(draftData, true, showAlert); 
-                updateDraftStatusBadge('草稿已暫存');
-            } else {
-                alert("資料庫尚未連線，請稍候...");
+            try{
+                if(window.saveDataToCloud) {
+                    await window.saveDataToCloud(draftData, true, showAlert); 
+                    updateDraftStatusBadge('草稿已暫存');
+                    if(showAlert) window.location.reload();
+                } else {
+                    alert("資料庫尚未連線，請稍候...");
+                }
+            } catch (err){
+                console.error('Draft save failed', err);
+                alert(convertText('暫存失敗，請稍後再試', currentLang));
             }
         };
 
@@ -906,11 +982,12 @@
                 currentStepKey = stepKey;
 
                 // Restore Data
-                const defaultData = { empName: '', supName: '', meetingTime: '', notes: { supervisor: '', showRex: '', yanling: '', retention: '' } };
+                const defaultData = { empName: '', role: '', supName: '', meetingTime: '', notes: { supervisor: '', showRex: '', yanling: '', retention: '' } };
                 
                 // Fallback for old data without nested object
                 let sourceData = record.draftSessionData || {
                     empName: record.emp,
+                    role: record.role,
                     supName: record.handler,
                     notes: { supervisor: record.lastNote } // Crude fallback
                 };
@@ -924,8 +1001,10 @@
 
                 // UI Update
                 document.getElementById('emp-name').value = currentSessionData.empName;
+                document.getElementById('emp-role').value = currentSessionData.role || '';
                 document.getElementById('sup-name').value = currentSessionData.supName;
                 document.getElementById('v-emp-name').textContent = currentSessionData.empName;
+                document.getElementById('v-emp-role').textContent = currentSessionData.role || convertText('未填寫崗位', currentLang);
                 document.getElementById('v-sup-name').textContent = currentSessionData.supName;
                 updateDraftStatusBadge(`編輯草稿：${currentSessionData.empName}`);
                 
@@ -975,13 +1054,16 @@
 
         function validateAndStart() {
             const empName = document.getElementById('emp-name').value.trim();
+            const empRole = document.getElementById('emp-role').value.trim();
             const supName = document.getElementById('sup-name').value.trim();
-            if (!empName || !supName) { alert(convertText('請輸入完整資訊', currentLang)); return; }
+            if (!empName || !supName || !empRole) { alert(convertText('請輸入完整資訊', currentLang)); return; }
             currentSessionData.empName = empName;
+            currentSessionData.role = empRole;
             currentSessionData.supName = supName;
             window.currentDraftId = null;
             updateDraftStatusBadge(null);
             document.getElementById('v-emp-name').textContent = empName;
+            document.getElementById('v-emp-role').textContent = empRole;
             document.getElementById('v-sup-name').textContent = supName;
             document.getElementById('case-info').classList.remove('hidden');
             document.getElementById('input-area-start').classList.add('hidden');
@@ -1048,6 +1130,7 @@
                     window.saveDataToCloud({
                         date: new Date().toISOString().split('T')[0],
                         emp: currentSessionData.empName,
+                        role: currentSessionData.role,
                         handler: handler,
                         stage: config.stageName,
                         lastNote,
@@ -1112,6 +1195,7 @@
             currentStepKey = 'start';
             window.currentDraftId = null;
             document.getElementById('emp-name').value = '';
+            document.getElementById('emp-role').value = '';
             document.getElementById('sup-name').value = '';
             document.getElementById('input-area-start').classList.remove('hidden');
             document.getElementById('input-area-notes').classList.add('hidden');
@@ -1120,7 +1204,7 @@
             document.getElementById('case-info').classList.add('hidden');
             const draftSelect = document.getElementById('draft-select');
             if (draftSelect) draftSelect.value = ""; 
-            currentSessionData = { empName: '', supName: '', meetingTime: '', notes: { supervisor: '', showRex: '', yanling: '', retention: '' } };
+            currentSessionData = { empName: '', role: '', supName: '', meetingTime: '', notes: { supervisor: '', showRex: '', yanling: '', retention: '' } };
             updateDraftStatusBadge(null);
             
             const config = flowConfig['start'];
@@ -1204,7 +1288,7 @@
             const data = window.allRecords || []; 
             tbody.innerHTML = '';
             if (data.length === 0) {
-                tbody.innerHTML = `<tr class="text-gray-400 text-sm text-center"><td colspan="6" class="py-4">${convertText('尚無紀錄', currentLang)}</td></tr>`;
+                tbody.innerHTML = `<tr class="text-gray-400 text-sm text-center"><td colspan="7" class="py-4">${convertText('尚無紀錄', currentLang)}</td></tr>`;
                 return;
             }
             data.forEach((rec, idx) => {
@@ -1224,6 +1308,7 @@
                     <tr class="${rowClass}">
                         <td class="px-6 py-4 text-sm text-gray-500">${rec.date}</td>
                         <td class="px-6 py-4 font-medium text-gray-900">${rec.emp}</td>
+                        <td class="px-6 py-4 text-sm text-gray-500">${convertText(rec.role || '未填寫崗位', currentLang)}</td>
                         <td class="px-6 py-4 text-sm text-gray-500">${rec.handler}</td>
                         <td class="px-6 py-4 text-sm text-gray-500">${convertText(rec.stage, currentLang)}</td>
                         <td class="px-6 py-4 text-sm"><span class="${statusClass}">${convertText(rec.result, currentLang)}</span></td>
@@ -1238,7 +1323,7 @@
             const data = window.allRecords || []; 
             tbody.innerHTML = '';
             if (data.length === 0) {
-                tbody.innerHTML = `<tr class="text-gray-400 text-center"><td colspan="7" class="py-4">${convertText('目前無案件紀錄', currentLang)}</td></tr>`;
+                tbody.innerHTML = `<tr class="text-gray-400 text-center"><td colspan="9" class="py-4">${convertText('目前無案件紀錄', currentLang)}</td></tr>`;
                 return;
             }
             data.forEach((rec, index) => {
@@ -1249,6 +1334,7 @@
                 tbody.innerHTML += `<tr>
                     <td class="px-4 py-3 text-gray-500 align-top">${rec.date}</td>
                     <td class="px-4 py-3 font-medium text-gray-900 align-top">${rec.emp}</td>
+                    <td class="px-4 py-3 text-gray-500 align-top">${convertText(rec.role || '未填寫崗位', currentLang)}</td>
                     <td class="px-4 py-3 text-gray-500 align-top">${rec.handler}</td>
                     <td class="px-4 py-3 text-gray-500 align-top">${convertText(rec.stage, currentLang)}</td>
                     <td class="px-4 py-3 text-gray-500 align-top">${rec.nextCompany || convertText('未提供', currentLang)}</td>
@@ -1284,7 +1370,8 @@
                     noteYan: document.getElementById('edit-note-yanling'),
                     noteRet: document.getElementById('edit-note-retention'),
                     note: document.getElementById('edit-note'),
-                    result: document.getElementById('edit-result')
+                    result: document.getElementById('edit-result'),
+                    role: document.getElementById('edit-role')
                 };
                 if (Object.values(fields).some(el => !el) || !modal) {
                     alert(convertText('編輯介面未正確載入', currentLang));
@@ -1294,6 +1381,7 @@
                 fields.id.value = id; 
                 fields.date.value = r.date || new Date().toISOString().slice(0,10); 
                 fields.emp.value = r.emp || ''; 
+                fields.role.value = r.role || '';
                 fields.handler.value = r.handler || ''; 
                 fields.stage.value = r.stage || ''; 
                 fields.nextCompany.value = r.nextCompany || ''; 
@@ -1335,6 +1423,7 @@
             const data = { 
                 date: document.getElementById('edit-date').value, 
                 emp: document.getElementById('edit-emp').value, 
+                role: document.getElementById('edit-role').value || '',
                 handler: document.getElementById('edit-handler').value, 
                 stage: document.getElementById('edit-stage').value || '未標示階段',
                 nextCompany: document.getElementById('edit-next-company').value || '',
@@ -1367,11 +1456,12 @@
         window.exportToCSV = () => { 
             const data = window.allRecords || []; 
             if(!data.length){ alert('No Data'); return; } 
-            let c = "\ufeff" + ['日期','人員','處理人','階段','離職去向','節點紀錄','結果'].map(h=>convertText(h,currentLang)).join(',') + "\n"; 
+            let c = "\ufeff" + ['日期','人員','崗位','處理人','階段','離職去向','節點紀錄','結果'].map(h=>convertText(h,currentLang)).join(',') + "\n"; 
             data.forEach(r => { 
                 const historyText = flattenHistoryText(r).replace(/"/g,'""'); 
+                const role = convertText(r.role || '未填寫崗位', currentLang).replace(/"/g,'""');
                 const nextCo = (r.nextCompany || '').replace(/"/g,'""'); 
-                c += [r.date, r.emp, r.handler, r.stage, `"${nextCo}"`, `"${historyText}"`, r.result].join(',') + "\n"; 
+                c += [r.date, r.emp, `"${role}"`, r.handler, r.stage, `"${nextCo}"`, `"${historyText}"`, r.result].join(',') + "\n"; 
             }); 
             const b = new Blob([c],{type:"text/csv;charset=utf-8;"}); 
             const l = document.createElement("a"); 
