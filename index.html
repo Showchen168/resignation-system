@@ -537,7 +537,7 @@
     <!-- Standard Script Block -->
     <script>
         // Versioning
-        const APP_VERSION = 'v1.0.23';
+        const APP_VERSION = 'v1.0.24';
 
         // Global State
         window.allRecords = []; 
@@ -789,7 +789,7 @@
                 data: {
                     labels: order.map(l => convertText(l, currentLang)),
                     datasets: [{
-                        label: convertText('留任案件數', currentLang),
+                        label: convertText('離職案件數', currentLang),
                         data: values,
                         backgroundColor: '#a855f7'
                     }]
