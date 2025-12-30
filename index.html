@@ -536,7 +536,7 @@
     <!-- Standard Script Block -->
     <script>
         // Versioning
-        const APP_VERSION = 'v1.0.21';
+        const APP_VERSION = 'v1.0.22';
 
         // Global State
         window.allRecords = []; 
@@ -1772,7 +1772,11 @@
                 return upsertLocalRecord({ ...(loadLocalRecords().find(r => r.id === id) || {}), ...updatedData, id }, false, true);
             }
             const docRef = doc(db, 'artifacts', appId, 'resignation_records', id);
-            try { await updateDoc(docRef, updatedData); alert("✅ 更新成功"); } catch (e) { alert("❌ 更新失敗"); }
+            try { await updateDoc(docRef, updatedData); alert("✅ 更新成功"); } catch (e) {
+                console.error("Update Error", e);
+                initializeLocalMode('雲端更新失敗，已改用本機暫存');
+                upsertLocalRecord({ ...(loadLocalRecords().find(r => r.id === id) || {}), ...updatedData, id }, false, true);
+            }
         };
 
         window.deleteDataInCloud = async (id) => {
