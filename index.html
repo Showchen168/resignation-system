@@ -332,6 +332,40 @@
                     <p id="role-empty" class="text-center text-sm text-gray-500 mt-3 hidden">${convertText('目前無崗位資料', currentLang)}</p>
                 </div>
             </div>
+            <div class="p-6 grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+                <div class="bg-purple-50 border border-purple-100 rounded-lg px-4 py-3 text-sm">
+                    <div class="text-purple-700 font-bold text-xs uppercase">平均薪水增幅</div>
+                    <div id="stat-salary-avg" class="text-2xl font-extrabold text-purple-900 mt-1">—</div>
+                    <div class="text-xs text-purple-700 mt-1">僅計算填寫調薪且留任案件</div>
+                </div>
+                <div class="bg-indigo-50 border border-indigo-100 rounded-lg px-4 py-3 text-sm">
+                    <div class="text-indigo-700 font-bold text-xs uppercase">中位數薪資增幅</div>
+                    <div id="stat-salary-median" class="text-2xl font-extrabold text-indigo-900 mt-1">—</div>
+                    <div class="text-xs text-indigo-700 mt-1">排除未填寫資料</div>
+                </div>
+                <div class="bg-teal-50 border border-teal-100 rounded-lg px-4 py-3 text-sm">
+                    <div class="text-teal-700 font-bold text-xs uppercase">最高薪資增幅</div>
+                    <div id="stat-salary-max" class="text-2xl font-extrabold text-teal-900 mt-1">—</div>
+                    <div class="text-xs text-teal-700 mt-1">觀察極值變化</div>
+                </div>
+                <div class="bg-amber-50 border border-amber-100 rounded-lg px-4 py-3 text-sm">
+                    <div class="text-amber-700 font-bold text-xs uppercase">填寫樣本數</div>
+                    <div id="stat-salary-sample" class="text-2xl font-extrabold text-amber-900 mt-1">0</div>
+                    <div class="text-xs text-amber-700 mt-1">留任案件中的有效填答</div>
+                </div>
+            </div>
+            <div class="p-6">
+                <div class="bg-gray-50 border border-gray-200 rounded-lg p-4">
+                    <div class="flex items-center justify-between mb-3">
+                        <h4 class="font-bold text-gray-800 text-sm">薪水增長幅度分布</h4>
+                        <span class="text-xs text-gray-500">僅計算填寫調薪幅度且留任的案件</span>
+                    </div>
+                    <div class="chart-container">
+                        <canvas id="chart-salary-growth"></canvas>
+                    </div>
+                    <p id="salary-empty" class="text-center text-sm text-gray-500 mt-3 hidden">目前沒有薪水增幅資料</p>
+                </div>
+            </div>
         </section>
 
         <!-- Process Flowchart Section (SOP) -->
@@ -447,6 +481,7 @@
                                     <th class="px-4 py-3 text-left text-xs font-bold text-gray-500 uppercase">崗位</th>
                                     <th class="px-4 py-3 text-left text-xs font-bold text-gray-500 uppercase">處理人</th>
                     <th class="px-4 py-3 text-left text-xs font-bold text-gray-500 uppercase">階段</th>
+                    <th class="px-4 py-3 text-left text-xs font-bold text-gray-500 uppercase">薪水增長幅度</th>
                     <th class="px-4 py-3 text-left text-xs font-bold text-gray-500 uppercase">離職去向</th>
                     <th class="px-4 py-3 text-left text-xs font-bold text-gray-500 uppercase">節點紀錄</th>
                     <th class="px-4 py-3 text-left text-xs font-bold text-gray-500 uppercase">結果</th>
@@ -475,6 +510,7 @@
                     <div><label class="block text-xs font-bold text-gray-500 mb-1">最後處理人</label><input type="text" id="edit-handler" class="input-field"></div>
                     <div><label class="block text-xs font-bold text-gray-500 mb-1">目前階段</label><input type="text" id="edit-stage" class="input-field" placeholder="如：留才確認 / 彥靈總 / 直屬主管"></div>
                     <div><label class="block text-xs font-bold text-gray-500 mb-1">離職後去向（公司）</label><input type="text" id="edit-next-company" class="input-field" placeholder="例：Google / AWS / 其他"></div>
+                    <div><label class="block text-xs font-bold text-gray-500 mb-1">薪水增長幅度 (%)</label><input type="number" step="0.1" id="edit-salary-growth" class="input-field" placeholder="例：10 表示調薪 10%"></div>
                     <div class="grid grid-cols-1 gap-3 border border-gray-200 rounded-lg p-3 bg-gray-50">
                         <div class="text-xs font-bold text-gray-600 mb-1">節點紀錄</div>
                         <div><label class="block text-xs font-bold text-gray-500 mb-1">直屬主管</label><textarea id="edit-note-supervisor" class="textarea-field"></textarea></div>
@@ -500,7 +536,7 @@
     <!-- Standard Script Block -->
     <script>
         // Versioning
-        const APP_VERSION = 'v1.0.18';
+        const APP_VERSION = 'v1.0.19';
 
         // Global State
         window.allRecords = []; 
@@ -510,6 +546,7 @@
         let outcomeChartInstance = null;
         let destinationChartInstance = null;
         let roleChartInstance = null;
+        let salaryGrowthChartInstance = null;
         let currentLang = 'zh-TW';
         window.currentDraftId = null;
 
@@ -524,6 +561,24 @@
             if(window.updateCharts) window.updateCharts();
         }
 
+        function parseSalaryGrowth(value){
+            if(value === undefined || value === null) return null;
+            const num = parseFloat(String(value).replace('%','').trim());
+            return Number.isFinite(num) ? num : null;
+        }
+        function formatSalaryGrowth(value, withSymbol = true){
+            const num = parseSalaryGrowth(value);
+            if(num === null) return withSymbol ? '—' : '';
+            const formatted = Number.isInteger(num) ? `${num}` : num.toFixed(1);
+            return withSymbol ? `${formatted}%` : formatted;
+        }
+        function calculateMedian(values){
+            if(!values || !values.length) return null;
+            const sorted = [...values].sort((a,b) => a - b);
+            const mid = Math.floor(sorted.length / 2);
+            if(sorted.length % 2 === 0) return (sorted[mid - 1] + sorted[mid]) / 2;
+            return sorted[mid];
+        }
         function summarizeRecords(records = []) {
             const total = records.length;
             const drafts = records.filter(r => r.outcomeType === 'draft').length;
@@ -534,6 +589,9 @@
             const stageMap = {};
             const destinationMap = {};
             const roleStats = {};
+            const salaryBucketOrder = ['0-5%', '5-10%', '10-15%', '15-20%', '20%以上'];
+            const salaryBuckets = salaryBucketOrder.reduce((acc, label) => ({ ...acc, [label]: 0 }), {});
+            const salaryValues = [];
             records.forEach(r => {
                 const key = r.stage || '未標示階段';
                 stageMap[key] = (stageMap[key] || 0) + 1;
@@ -547,17 +605,43 @@
                     if(r.outcomeType === 'retain') roleStats[roleKey].retain += 1;
                     else roleStats[roleKey].exit += 1;
                 }
+                const growthVal = r.outcomeType === 'retain' ? parseSalaryGrowth(r.salaryGrowth) : null;
+                if(growthVal !== null){
+                    salaryValues.push(growthVal);
+                    if(growthVal < 5) salaryBuckets['0-5%']++;
+                    else if(growthVal < 10) salaryBuckets['5-10%']++;
+                    else if(growthVal < 15) salaryBuckets['10-15%']++;
+                    else if(growthVal < 20) salaryBuckets['15-20%']++;
+                    else salaryBuckets['20%以上']++;
+                }
             });
-            return { total, drafts, retain, exit, closed, successRate, stageMap, destinationMap, roleStats };
+            const salaryStats = { sampleSize: salaryValues.length, avg: null, median: null, max: null, buckets: salaryBuckets, bucketOrder: salaryBucketOrder };
+            if(salaryValues.length){
+                const sum = salaryValues.reduce((acc, n) => acc + n, 0);
+                salaryStats.avg = parseFloat((sum / salaryValues.length).toFixed(1));
+                const medianVal = calculateMedian(salaryValues);
+                salaryStats.median = medianVal !== null ? parseFloat(medianVal.toFixed(1)) : null;
+                salaryStats.max = parseFloat(Math.max(...salaryValues).toFixed(1));
+            }
+            return { total, drafts, retain, exit, closed, successRate, stageMap, destinationMap, roleStats, salaryStats };
         }
 
         function updateAnalyticsCards(stats) {
             const totalEl = document.getElementById('stat-total-cases');
             const draftEl = document.getElementById('stat-draft-cases');
             const successEl = document.getElementById('stat-success-rate');
+            const avgEl = document.getElementById('stat-salary-avg');
+            const medianEl = document.getElementById('stat-salary-median');
+            const maxEl = document.getElementById('stat-salary-max');
+            const sampleEl = document.getElementById('stat-salary-sample');
             if(totalEl) totalEl.textContent = stats.total;
             if(draftEl) draftEl.textContent = stats.drafts;
             if(successEl) successEl.textContent = `${stats.successRate}%`;
+            const salary = stats.salaryStats || {};
+            if(avgEl) avgEl.textContent = salary.sampleSize ? formatSalaryGrowth(salary.avg) : '—';
+            if(medianEl) medianEl.textContent = salary.sampleSize ? formatSalaryGrowth(salary.median) : '—';
+            if(maxEl) maxEl.textContent = salary.sampleSize ? formatSalaryGrowth(salary.max) : '—';
+            if(sampleEl) sampleEl.textContent = salary.sampleSize || 0;
         }
 
         function renderOutcomeChart(stats) {
@@ -681,6 +765,42 @@
             });
         }
 
+        function renderSalaryGrowthChart(stats){
+            const canvas = document.getElementById('chart-salary-growth');
+            const empty = document.getElementById('salary-empty');
+            if(!canvas || typeof Chart === 'undefined') return;
+            const ctx = canvas.getContext('2d');
+            const salary = stats.salaryStats || {};
+            const order = salary.bucketOrder || ['0-5%', '5-10%', '10-15%', '15-20%', '20%以上'];
+            const values = order.map(label => (salary.buckets || {})[label] || 0);
+            const hasData = (salary.sampleSize || 0) > 0 && values.some(v => v > 0);
+            if(!hasData){
+                if(empty) empty.classList.remove('hidden');
+                if(salaryGrowthChartInstance) salaryGrowthChartInstance.destroy();
+                return;
+            }
+            if(empty) empty.classList.add('hidden');
+            if(salaryGrowthChartInstance) salaryGrowthChartInstance.destroy();
+            salaryGrowthChartInstance = new Chart(ctx, {
+                type: 'bar',
+                data: {
+                    labels: order.map(l => convertText(l, currentLang)),
+                    datasets: [{
+                        label: convertText('留任案件數', currentLang),
+                        data: values,
+                        backgroundColor: '#a855f7'
+                    }]
+                },
+                options: {
+                    scales: { 
+                        x: { beginAtZero: true, ticks: { precision:0 } },
+                        y: { beginAtZero: true, ticks: { precision:0 } }
+                    },
+                    plugins: { legend: { display: false } }
+                }
+            });
+        }
+
         let analyticsYear = 'all';
         function getFilteredRecordsForAnalytics() {
             const records = window.allRecords || [];
@@ -719,6 +839,7 @@
             renderStageChart(stats);
             renderRoleChart(stats);
             renderDestinationChart(stats);
+            renderSalaryGrowthChart(stats);
         };
 
         function isPlaceholderFirebaseConfig(cfg) {
@@ -1257,6 +1378,8 @@
             if(source.meetingTime) items.push(`<div><span class="font-bold text-gray-600">${convertText('Sammy 會議', currentLang)}：</span>${source.meetingTime.replace('T',' ')}</div>`);
             if(notes.yanling) items.push(`<div><span class="font-bold text-gray-600">${convertText('彥靈總', currentLang)}：</span>${notes.yanling}</div>`);
             if(notes.retention) items.push(`<div class="bg-blue-50 border border-blue-100 rounded px-2 py-1 mt-1"><span class="font-bold text-blue-700">${convertText('留才方案', currentLang)}：</span>${notes.retention}</div>`);
+            const salary = formatSalaryGrowth(rec.salaryGrowth);
+            if(salary && salary !== '—') items.push(`<div><span class="font-bold text-gray-600">${convertText('薪資增幅', currentLang)}：</span>${salary}</div>`);
             if (!items.length && rec.lastNote) items.push(`<div>${rec.lastNote}</div>`);
             return items.join('<hr class="my-1 border-gray-100">') || convertText('無紀錄', currentLang);
         }
@@ -1345,7 +1468,7 @@
             const data = window.allRecords || []; 
             tbody.innerHTML = '';
             if (data.length === 0) {
-                tbody.innerHTML = `<tr class="text-gray-400 text-center"><td colspan="9" class="py-4">${convertText('目前無案件紀錄', currentLang)}</td></tr>`;
+                tbody.innerHTML = `<tr class="text-gray-400 text-center"><td colspan="10" class="py-4">${convertText('目前無案件紀錄', currentLang)}</td></tr>`;
                 return;
             }
             data.forEach((rec, index) => {
@@ -1359,6 +1482,7 @@
                     <td class="px-4 py-3 text-gray-500 align-top">${convertText(rec.role || '未填寫崗位', currentLang)}</td>
                     <td class="px-4 py-3 text-gray-500 align-top">${rec.handler}</td>
                     <td class="px-4 py-3 text-gray-500 align-top">${convertText(rec.stage, currentLang)}</td>
+                    <td class="px-4 py-3 text-gray-500 align-top">${formatSalaryGrowth(rec.salaryGrowth)}</td>
                     <td class="px-4 py-3 text-gray-500 align-top">${rec.nextCompany || convertText('未提供', currentLang)}</td>
                     <td class="px-4 py-3 text-gray-600 text-sm align-top">${historyHtml}</td>
                     <td class="px-4 py-3 ${statusColor} align-top">${convertText(rec.result, currentLang)}</td>
@@ -1386,6 +1510,7 @@
                     handler: document.getElementById('edit-handler'),
                     stage: document.getElementById('edit-stage'),
                     nextCompany: document.getElementById('edit-next-company'),
+                    salaryGrowth: document.getElementById('edit-salary-growth'),
                     noteSup: document.getElementById('edit-note-supervisor'),
                     noteShow: document.getElementById('edit-note-showrex'),
                     meeting: document.getElementById('edit-meeting-time'),
@@ -1407,6 +1532,7 @@
                 fields.handler.value = r.handler || ''; 
                 fields.stage.value = r.stage || ''; 
                 fields.nextCompany.value = r.nextCompany || ''; 
+                fields.salaryGrowth.value = formatSalaryGrowth(r.salaryGrowth, false); 
                 fields.noteSup.value = history.notes?.supervisor || ''; 
                 fields.noteShow.value = history.notes?.showRex || ''; 
                 fields.meeting.value = history.meetingTime || ''; 
@@ -1432,6 +1558,7 @@
             const id = document.getElementById('edit-id').value;
             const resType = document.getElementById('edit-result').value;
             let resText = convertText(resType === 'success' ? '成功留任' : (resType === 'fail' ? '留才失敗 (仍離職)' : (resType==='draft'?'進行中 (Draft)':'正常離職')), currentLang);
+            const salaryGrowthVal = (document.getElementById('edit-salary-growth').value || '').trim();
             const history = {
                 meetingTime: document.getElementById('edit-meeting-time').value || '',
                 notes: {
@@ -1449,6 +1576,7 @@
                 handler: document.getElementById('edit-handler').value, 
                 stage: document.getElementById('edit-stage').value || '未標示階段',
                 nextCompany: document.getElementById('edit-next-company').value || '',
+                salaryGrowth: salaryGrowthVal,
                 lastNote: finalNote, 
                 outcomeType: resType === 'success' ? 'retain' : (resType==='draft'?'draft':'exit'), 
                 result: resText,
@@ -1472,18 +1600,22 @@
             if(source.meetingTime) parts.push(`Sammy 會議:${source.meetingTime.replace('T',' ')}`);
             if(notes.yanling) parts.push(`彥靈總:${notes.yanling}`);
             if(notes.retention) parts.push(`留才方案:${notes.retention}`);
+            const salary = formatSalaryGrowth(rec.salaryGrowth);
+            if(salary && salary !== '—') parts.push(`薪資增幅:${salary}`);
             if(!parts.length && rec.lastNote) parts.push(rec.lastNote);
             return parts.join(" | ");
         }
         window.exportToCSV = () => { 
             const data = window.allRecords || []; 
             if(!data.length){ alert('No Data'); return; } 
-            let c = "\ufeff" + ['日期','人員','崗位','處理人','階段','離職去向','節點紀錄','結果'].map(h=>convertText(h,currentLang)).join(',') + "\n"; 
+            let c = "\ufeff" + ['日期','人員','崗位','處理人','階段','薪水增長幅度','離職去向','節點紀錄','結果'].map(h=>convertText(h,currentLang)).join(',') + "\n"; 
             data.forEach(r => { 
                 const historyText = flattenHistoryText(r).replace(/"/g,'""'); 
                 const role = convertText(r.role || '未填寫崗位', currentLang).replace(/"/g,'""');
                 const nextCo = (r.nextCompany || '').replace(/"/g,'""'); 
-                c += [r.date, r.emp, `"${role}"`, r.handler, r.stage, `"${nextCo}"`, `"${historyText}"`, r.result].join(',') + "\n"; 
+                const salary = formatSalaryGrowth(r.salaryGrowth);
+                const salaryCSV = salary === '—' ? '' : salary;
+                c += [r.date, r.emp, `"${role}"`, r.handler, r.stage, `"${salaryCSV}"`, `"${nextCo}"`, `"${historyText}"`, r.result].join(',') + "\n"; 
             }); 
             const b = new Blob([c],{type:"text/csv;charset=utf-8;"}); 
             const l = document.createElement("a"); 
