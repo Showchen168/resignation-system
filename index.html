@@ -334,36 +334,36 @@
             </div>
             <div class="p-6 grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
                 <div class="bg-purple-50 border border-purple-100 rounded-lg px-4 py-3 text-sm">
-                    <div class="text-purple-700 font-bold text-xs uppercase">平均薪水增幅</div>
+                    <div class="text-purple-700 font-bold text-xs uppercase">離職後平均薪資增幅</div>
                     <div id="stat-salary-avg" class="text-2xl font-extrabold text-purple-900 mt-1">—</div>
-                    <div class="text-xs text-purple-700 mt-1">僅計算填寫調薪且留任案件</div>
+                    <div class="text-xs text-purple-700 mt-1">僅計算離職且填寫下家公司與薪資增幅的案件</div>
                 </div>
                 <div class="bg-indigo-50 border border-indigo-100 rounded-lg px-4 py-3 text-sm">
-                    <div class="text-indigo-700 font-bold text-xs uppercase">中位數薪資增幅</div>
+                    <div class="text-indigo-700 font-bold text-xs uppercase">離職後薪資增幅中位數</div>
                     <div id="stat-salary-median" class="text-2xl font-extrabold text-indigo-900 mt-1">—</div>
                     <div class="text-xs text-indigo-700 mt-1">排除未填寫資料</div>
                 </div>
                 <div class="bg-teal-50 border border-teal-100 rounded-lg px-4 py-3 text-sm">
-                    <div class="text-teal-700 font-bold text-xs uppercase">最高薪資增幅</div>
+                    <div class="text-teal-700 font-bold text-xs uppercase">離職後最高薪資增幅</div>
                     <div id="stat-salary-max" class="text-2xl font-extrabold text-teal-900 mt-1">—</div>
                     <div class="text-xs text-teal-700 mt-1">觀察極值變化</div>
                 </div>
                 <div class="bg-amber-50 border border-amber-100 rounded-lg px-4 py-3 text-sm">
                     <div class="text-amber-700 font-bold text-xs uppercase">填寫樣本數</div>
                     <div id="stat-salary-sample" class="text-2xl font-extrabold text-amber-900 mt-1">0</div>
-                    <div class="text-xs text-amber-700 mt-1">留任案件中的有效填答</div>
+                    <div class="text-xs text-amber-700 mt-1">離職案件中的有效填答</div>
                 </div>
             </div>
             <div class="p-6">
                 <div class="bg-gray-50 border border-gray-200 rounded-lg p-4">
                     <div class="flex items-center justify-between mb-3">
-                        <h4 class="font-bold text-gray-800 text-sm">薪水增長幅度分布</h4>
-                        <span class="text-xs text-gray-500">僅計算填寫調薪幅度且留任的案件</span>
+                        <h4 class="font-bold text-gray-800 text-sm">離職後薪資增幅分布</h4>
+                        <span class="text-xs text-gray-500">僅計算離職且填寫下家公司與增幅的案件</span>
                     </div>
                     <div class="chart-container">
                         <canvas id="chart-salary-growth"></canvas>
                     </div>
-                    <p id="salary-empty" class="text-center text-sm text-gray-500 mt-3 hidden">目前沒有薪水增幅資料</p>
+                    <p id="salary-empty" class="text-center text-sm text-gray-500 mt-3 hidden">目前沒有離職後薪資增幅資料</p>
                 </div>
             </div>
         </section>
@@ -481,7 +481,7 @@
                                     <th class="px-4 py-3 text-left text-xs font-bold text-gray-500 uppercase">崗位</th>
                                     <th class="px-4 py-3 text-left text-xs font-bold text-gray-500 uppercase">處理人</th>
                     <th class="px-4 py-3 text-left text-xs font-bold text-gray-500 uppercase">階段</th>
-                    <th class="px-4 py-3 text-left text-xs font-bold text-gray-500 uppercase">薪水增長幅度</th>
+                    <th class="px-4 py-3 text-left text-xs font-bold text-gray-500 uppercase">離職後薪資增幅</th>
                     <th class="px-4 py-3 text-left text-xs font-bold text-gray-500 uppercase">離職去向</th>
                     <th class="px-4 py-3 text-left text-xs font-bold text-gray-500 uppercase">節點紀錄</th>
                     <th class="px-4 py-3 text-left text-xs font-bold text-gray-500 uppercase">結果</th>
@@ -510,7 +510,7 @@
                     <div><label class="block text-xs font-bold text-gray-500 mb-1">最後處理人</label><input type="text" id="edit-handler" class="input-field"></div>
                     <div><label class="block text-xs font-bold text-gray-500 mb-1">目前階段</label><input type="text" id="edit-stage" class="input-field" placeholder="如：留才確認 / 彥靈總 / 直屬主管"></div>
                     <div><label class="block text-xs font-bold text-gray-500 mb-1">離職後去向（公司）</label><input type="text" id="edit-next-company" class="input-field" placeholder="例：Google / AWS / 其他"></div>
-                    <div><label class="block text-xs font-bold text-gray-500 mb-1">薪水增長幅度 (%)</label><input type="number" step="0.1" id="edit-salary-growth" class="input-field" placeholder="例：10 表示調薪 10%"></div>
+                    <div><label class="block text-xs font-bold text-gray-500 mb-1">離職後薪資增幅 (%)</label><input type="number" step="0.1" id="edit-salary-growth" class="input-field" placeholder="例：10 表示到下一家公司薪資多 10%"></div>
                     <div class="grid grid-cols-1 gap-3 border border-gray-200 rounded-lg p-3 bg-gray-50">
                         <div class="text-xs font-bold text-gray-600 mb-1">節點紀錄</div>
                         <div><label class="block text-xs font-bold text-gray-500 mb-1">直屬主管</label><textarea id="edit-note-supervisor" class="textarea-field"></textarea></div>
@@ -536,10 +536,11 @@
     <!-- Standard Script Block -->
     <script>
         // Versioning
-        const APP_VERSION = 'v1.0.20';
+        const APP_VERSION = 'v1.0.21';
 
         // Global State
         window.allRecords = []; 
+        window.lastCloudSync = window.lastCloudSync || null;
         let currentSessionData = { empName: '', role: '', supName: '', meetingTime: '', notes: { supervisor: '', showRex: '', yanling: '', retention: '' } };
         let currentStepKey = 'start';
         let retentionChartInstance = null;
@@ -605,7 +606,8 @@
                     if(r.outcomeType === 'retain') roleStats[roleKey].retain += 1;
                     else roleStats[roleKey].exit += 1;
                 }
-                const growthVal = r.outcomeType === 'retain' ? parseSalaryGrowth(r.salaryGrowth) : null;
+                const isExitWithNextCompany = r.outcomeType === 'exit' && (r.nextCompany || '').trim();
+                const growthVal = isExitWithNextCompany ? parseSalaryGrowth(r.salaryGrowth) : null;
                 if(growthVal !== null){
                     salaryValues.push(growthVal);
                     if(growthVal < 5) salaryBuckets['0-5%']++;
@@ -926,16 +928,15 @@
             updateConnectionBadge(false, '本機離線暫存');
         }
         // 連線狀態顯示
-        let lastCloudSync = null;
         function updateConnectionBadge(isOnline, note = '') {
             const badge = document.getElementById('connection-badge');
             const hint = document.getElementById('sync-hint');
             if (!badge || !hint) return;
-            const timeText = lastCloudSync ? new Date(lastCloudSync).toLocaleString() : '尚未同步';
+            const timeText = window.lastCloudSync ? new Date(window.lastCloudSync).toLocaleString() : '尚未同步';
             if (isOnline) {
                 badge.textContent = '狀態：已連線 Firebase';
                 badge.className = 'text-[11px] font-bold px-2 py-[2px] rounded bg-green-100 text-green-800 border border-green-300';
-                hint.textContent = `雲端同步時間：${timeText}`;
+                hint.textContent = `雲端同步時間：${timeText}${note ? `（${note}）` : ''}`;
             } else {
                 badge.textContent = '狀態：離線備份模式';
                 badge.className = 'text-[11px] font-bold px-2 py-[2px] rounded bg-amber-100 text-amber-800 border border-amber-300';
@@ -1397,7 +1398,7 @@
             if(notes.yanling) items.push(`<div><span class="font-bold text-gray-600">${convertText('彥靈總', currentLang)}：</span>${notes.yanling}</div>`);
             if(notes.retention) items.push(`<div class="bg-blue-50 border border-blue-100 rounded px-2 py-1 mt-1"><span class="font-bold text-blue-700">${convertText('留才方案', currentLang)}：</span>${notes.retention}</div>`);
             const salary = formatSalaryGrowth(rec.salaryGrowth);
-            if(salary && salary !== '—') items.push(`<div><span class="font-bold text-gray-600">${convertText('薪資增幅', currentLang)}：</span>${salary}</div>`);
+            if(salary && salary !== '—') items.push(`<div><span class="font-bold text-gray-600">${convertText('離職後薪資增幅', currentLang)}：</span>${salary}</div>`);
             if (!items.length && rec.lastNote) items.push(`<div>${rec.lastNote}</div>`);
             return items.join('<hr class="my-1 border-gray-100">') || convertText('無紀錄', currentLang);
         }
@@ -1619,14 +1620,14 @@
             if(notes.yanling) parts.push(`彥靈總:${notes.yanling}`);
             if(notes.retention) parts.push(`留才方案:${notes.retention}`);
             const salary = formatSalaryGrowth(rec.salaryGrowth);
-            if(salary && salary !== '—') parts.push(`薪資增幅:${salary}`);
+            if(salary && salary !== '—') parts.push(`離職後增幅:${salary}`);
             if(!parts.length && rec.lastNote) parts.push(rec.lastNote);
             return parts.join(" | ");
         }
         window.exportToCSV = () => { 
             const data = window.allRecords || []; 
             if(!data.length){ alert('No Data'); return; } 
-            let c = "\ufeff" + ['日期','人員','崗位','處理人','階段','薪水增長幅度','離職去向','節點紀錄','結果'].map(h=>convertText(h,currentLang)).join(',') + "\n"; 
+            let c = "\ufeff" + ['日期','人員','崗位','處理人','階段','離職後薪資增幅','離職去向','節點紀錄','結果'].map(h=>convertText(h,currentLang)).join(',') + "\n"; 
             data.forEach(r => { 
                 const historyText = flattenHistoryText(r).replace(/"/g,'""'); 
                 const role = convertText(r.role || '未填寫崗位', currentLang).replace(/"/g,'""');
@@ -1718,7 +1719,7 @@
                     if (user) {
                         currentUser = user;
                         subscribeToData();
-                        updateConnectionBadge(true, '已登入');
+                        updateConnectionBadge(true, '已登入，等待雲端同步');
                     }
                 });
             } catch (e) {
@@ -1731,10 +1732,11 @@
         function subscribeToData() {
             if (!currentUser || useLocalStorage) return;
             const q = query(getRecordsCollectionRef(), orderBy('date', 'desc'));
+            updateConnectionBadge(true, '雲端同步中...');
             onSnapshot(q, (snapshot) => {
                 const data = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
                 setAllRecords(data);
-                lastCloudSync = Date.now();
+                window.lastCloudSync = Date.now();
                 updateConnectionBadge(true, '已同步雲端');
             });
         }
@@ -1755,7 +1757,7 @@
                     if(isDraft) window.currentDraftId = ref.id;
                     if(showAlert) alert(isDraft ? "✅ 新案件已暫存！" : "案件已建立！");
                 }
-                lastCloudSync = Date.now();
+                window.lastCloudSync = Date.now();
                 updateConnectionBadge(true, '雲端儲存成功');
             } catch (e) { 
                 console.error("Save Error", e); 
