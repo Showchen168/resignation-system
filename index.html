@@ -537,7 +537,7 @@
     <!-- Standard Script Block -->
     <script>
         // Versioning
-        const APP_VERSION = 'v1.0.24';
+        const APP_VERSION = 'v1.0.25';
 
         // Global State
         window.allRecords = []; 
@@ -1346,8 +1346,12 @@
                         if (config.requireNote && !document.getElementById('current-notes').value.trim()) { alert(convertText('請輸入內容', currentLang)); return; }
                         if (config.requireTime && !document.getElementById('meeting-time').value) { alert(convertText('請選擇時間', currentLang)); return; }
 
+                        // Sync latest inputs before transition
+                        syncCurrentStepInputs();
+
+                        const targetConfig = flowConfig[btn.target] || {};
                         // Checkpoint Save (Silent)
-                        if(window.saveDataToCloud) {
+                        if(window.saveDataToCloud && !targetConfig.isEnd) {
                             window.saveDraft(false, true);
                         }
                         transitionTo(btn.target);
