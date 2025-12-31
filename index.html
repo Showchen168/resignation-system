@@ -537,7 +537,7 @@
     <!-- Standard Script Block -->
     <script>
         // Versioning
-        const APP_VERSION = 'v1.0.25';
+        const APP_VERSION = 'v1.0.26';
 
         // Global State
         window.allRecords = []; 
@@ -594,6 +594,7 @@
             const salaryBucketOrder = ['0-5%', '5-10%', '10-15%', '15-20%', '20%以上'];
             const salaryBuckets = salaryBucketOrder.reduce((acc, label) => ({ ...acc, [label]: 0 }), {});
             const salaryValues = [];
+            const salaryDistributionMap = {};
             records.forEach(r => {
                 const key = r.stage || '未標示階段';
                 stageMap[key] = (stageMap[key] || 0) + 1;
@@ -611,6 +612,8 @@
                 const growthVal = eligibleForSalary ? parseSalaryGrowth(r.salaryGrowth) : null;
                 if(growthVal !== null){
                     salaryValues.push(growthVal);
+                    const normalizedGrowth = Number.isInteger(growthVal) ? growthVal : parseFloat(growthVal.toFixed(1));
+                    salaryDistributionMap[normalizedGrowth] = (salaryDistributionMap[normalizedGrowth] || 0) + 1;
                     if(growthVal < 5) salaryBuckets['0-5%']++;
                     else if(growthVal < 10) salaryBuckets['5-10%']++;
                     else if(growthVal < 15) salaryBuckets['10-15%']++;
@@ -618,7 +621,10 @@
                     else salaryBuckets['20%以上']++;
                 }
             });
-            const salaryStats = { sampleSize: salaryValues.length, avg: null, median: null, max: null, buckets: salaryBuckets, bucketOrder: salaryBucketOrder };
+            const salaryDistribution = Object.entries(salaryDistributionMap)
+                .map(([value, count]) => ({ value: parseFloat(value), count }))
+                .sort((a, b) => a.value - b.value);
+            const salaryStats = { sampleSize: salaryValues.length, avg: null, median: null, max: null, buckets: salaryBuckets, bucketOrder: salaryBucketOrder, distribution: salaryDistribution };
             if(salaryValues.length){
                 const sum = salaryValues.reduce((acc, n) => acc + n, 0);
                 salaryStats.avg = parseFloat((sum / salaryValues.length).toFixed(1));
@@ -774,9 +780,8 @@
             if(!canvas || typeof Chart === 'undefined') return;
             const ctx = canvas.getContext('2d');
             const salary = stats.salaryStats || {};
-            const order = salary.bucketOrder || ['0-5%', '5-10%', '10-15%', '15-20%', '20%以上'];
-            const values = order.map(label => (salary.buckets || {})[label] || 0);
-            const hasData = (salary.sampleSize || 0) > 0 && values.some(v => v > 0);
+            const distribution = Array.isArray(salary.distribution) ? salary.distribution : [];
+            const hasData = (salary.sampleSize || 0) > 0 && distribution.length > 0;
             if(!hasData){
                 if(empty) empty.classList.remove('hidden');
                 if(salaryGrowthChartInstance) salaryGrowthChartInstance.destroy();
@@ -784,10 +789,12 @@
             }
             if(empty) empty.classList.add('hidden');
             if(salaryGrowthChartInstance) salaryGrowthChartInstance.destroy();
+            const labels = distribution.map(item => formatSalaryGrowth(item.value));
+            const values = distribution.map(item => item.count);
             salaryGrowthChartInstance = new Chart(ctx, {
                 type: 'bar',
                 data: {
-                    labels: order.map(l => convertText(l, currentLang)),
+                    labels: labels.map(l => convertText(l, currentLang)),
                     datasets: [{
                         label: convertText('離職案件數', currentLang),
                         data: values,
