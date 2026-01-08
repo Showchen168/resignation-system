@@ -81,22 +81,70 @@
                     </div>
                 </div>
             </div>
-            <nav class="hidden md:flex space-x-4 text-sm font-medium text-gray-600 items-center">
-                <a href="#case-processing" class="hover:text-blue-700 transition-colors">案件處理</a>
-                <a href="#records" class="hover:text-blue-700 transition-colors">歷史紀錄</a>
-                <a href="#analytics" class="hover:text-blue-700 transition-colors">數據看板</a>
-                <a href="#process-map" class="hover:text-blue-700 transition-colors">標準SOP</a>
-                <button onclick="toggleLanguage()" class="border border-blue-300 text-blue-600 hover:bg-blue-50 px-3 py-1 rounded transition-colors flex items-center">
-                    <span class="text-xs mr-1">🌐</span> <span id="lang-btn-text">繁/简</span>
-                </button>
-                <a id="admin-nav-link" href="#admin-panel" class="text-blue-600 hover:text-blue-800 font-bold flex items-center bg-blue-50 px-3 py-1 rounded-full">
-                    <span class="mr-1">🔒</span> 管理後台
-                </a>
-            </nav>
+            <div class="flex items-center space-x-4">
+                <nav class="hidden md:flex space-x-4 text-sm font-medium text-gray-600 items-center">
+                    <a href="#case-processing" class="hover:text-blue-700 transition-colors">案件處理</a>
+                    <a href="#records" class="hover:text-blue-700 transition-colors">歷史紀錄</a>
+                    <a href="#analytics" class="hover:text-blue-700 transition-colors">數據看板</a>
+                    <a href="#process-map" class="hover:text-blue-700 transition-colors">標準SOP</a>
+                    <button onclick="toggleLanguage()" class="border border-blue-300 text-blue-600 hover:bg-blue-50 px-3 py-1 rounded transition-colors flex items-center">
+                        <span class="text-xs mr-1">🌐</span> <span id="lang-btn-text">繁/简</span>
+                    </button>
+                    <a id="admin-nav-link" href="#admin-panel" class="text-blue-600 hover:text-blue-800 font-bold flex items-center bg-blue-50 px-3 py-1 rounded-full">
+                        <span class="mr-1">🔒</span> 管理後台
+                    </a>
+                </nav>
+                <div id="auth-user-controls" class="hidden items-center space-x-2 text-xs sm:text-sm">
+                    <span class="text-gray-600 font-medium">登入中：<span id="auth-user-label"></span></span>
+                    <button onclick="logoutUser()" class="border border-gray-300 text-gray-600 hover:bg-gray-50 px-3 py-1 rounded transition-colors">登出</button>
+                </div>
+            </div>
         </div>
     </header>
 
-    <main class="flex-grow p-4 sm:p-8">
+    <div id="auth-screen" class="fixed inset-0 z-[200] flex items-center justify-center bg-gray-900/60 p-4 hidden">
+        <div class="w-full max-w-md rounded-2xl bg-white p-6 shadow-2xl border border-gray-200">
+            <div class="text-center mb-6">
+                <div class="text-3xl mb-2">🔐</div>
+                <h2 class="text-xl font-bold text-gray-800">郵箱帳號登入</h2>
+                <p class="text-sm text-gray-500 mt-1">請先登入或註冊後再進入系統</p>
+            </div>
+            <div class="flex gap-2 mb-5">
+                <button id="auth-tab-login" onclick="switchAuthTab('login')" class="flex-1 py-2 rounded-lg text-sm font-semibold bg-blue-600 text-white">登入</button>
+                <button id="auth-tab-register" onclick="switchAuthTab('register')" class="flex-1 py-2 rounded-lg text-sm font-semibold bg-gray-100 text-gray-600">註冊</button>
+            </div>
+            <div id="auth-login-form" class="space-y-4">
+                <div>
+                    <label class="block text-xs font-bold text-gray-500 mb-1">郵箱</label>
+                    <input type="email" id="auth-login-email" class="input-field" placeholder="name@example.com">
+                </div>
+                <div>
+                    <label class="block text-xs font-bold text-gray-500 mb-1">密碼</label>
+                    <input type="password" id="auth-login-password" class="input-field" placeholder="請輸入密碼">
+                </div>
+                <p id="auth-login-error" class="text-xs text-red-600 hidden"></p>
+                <button onclick="loginWithEmail()" class="w-full btn-primary">登入</button>
+            </div>
+            <div id="auth-register-form" class="space-y-4 hidden">
+                <div>
+                    <label class="block text-xs font-bold text-gray-500 mb-1">郵箱</label>
+                    <input type="email" id="auth-register-email" class="input-field" placeholder="name@example.com">
+                </div>
+                <div>
+                    <label class="block text-xs font-bold text-gray-500 mb-1">設定密碼</label>
+                    <input type="password" id="auth-register-password" class="input-field" placeholder="至少 6 碼">
+                </div>
+                <div>
+                    <label class="block text-xs font-bold text-gray-500 mb-1">確認密碼</label>
+                    <input type="password" id="auth-register-confirm" class="input-field" placeholder="再次輸入密碼">
+                </div>
+                <p id="auth-register-error" class="text-xs text-red-600 hidden"></p>
+                <button onclick="registerWithEmail()" class="w-full btn-primary">建立帳號並登入</button>
+            </div>
+        </div>
+    </div>
+
+    <main id="app-main" class="flex-grow p-4 sm:p-8">
         
         <!-- Case Processing Section -->
         <section id="case-processing" class="max-w-7xl mx-auto mb-12">
@@ -537,7 +585,7 @@
     <!-- Standard Script Block -->
     <script>
         // Versioning
-        const APP_VERSION = 'v1.0.26';
+        const APP_VERSION = 'v1.0.28';
 
         // Global State
         window.allRecords = []; 
@@ -551,6 +599,151 @@
         let salaryGrowthChartInstance = null;
         let currentLang = 'zh-TW';
         window.currentDraftId = null;
+        const AUTH_USERS_KEY = 'rs_auth_users';
+        const AUTH_CURRENT_USER_KEY = 'rs_auth_current_user';
+
+        function getStoredUsers() {
+            try {
+                const raw = localStorage.getItem(AUTH_USERS_KEY);
+                const parsed = raw ? JSON.parse(raw) : [];
+                return Array.isArray(parsed) ? parsed : [];
+            } catch (error) {
+                console.warn('讀取帳號資料失敗', error);
+                return [];
+            }
+        }
+
+        function saveStoredUsers(users) {
+            localStorage.setItem(AUTH_USERS_KEY, JSON.stringify(users));
+        }
+
+        function getCurrentUserEmail() {
+            return localStorage.getItem(AUTH_CURRENT_USER_KEY);
+        }
+
+        function setCurrentUserEmail(email) {
+            localStorage.setItem(AUTH_CURRENT_USER_KEY, email);
+        }
+
+        function clearCurrentUserEmail() {
+            localStorage.removeItem(AUTH_CURRENT_USER_KEY);
+        }
+
+        function setAuthError(targetId, message) {
+            const el = document.getElementById(targetId);
+            if (!el) return;
+            if (message) {
+                el.textContent = message;
+                el.classList.remove('hidden');
+            } else {
+                el.textContent = '';
+                el.classList.add('hidden');
+            }
+        }
+
+        function isValidEmail(value) {
+            return /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(value);
+        }
+
+        function updateAuthUI() {
+            const email = getCurrentUserEmail();
+            const authScreen = document.getElementById('auth-screen');
+            const appMain = document.getElementById('app-main');
+            const controls = document.getElementById('auth-user-controls');
+            const label = document.getElementById('auth-user-label');
+            const isLoggedIn = Boolean(email);
+
+            if (authScreen) authScreen.classList.toggle('hidden', isLoggedIn);
+            if (appMain) appMain.classList.toggle('hidden', !isLoggedIn);
+            if (controls) controls.classList.toggle('hidden', !isLoggedIn);
+            if (label) label.textContent = email || '';
+            document.body.classList.toggle('overflow-hidden', !isLoggedIn);
+        }
+
+        window.switchAuthTab = (tab) => {
+            const loginForm = document.getElementById('auth-login-form');
+            const registerForm = document.getElementById('auth-register-form');
+            const loginTab = document.getElementById('auth-tab-login');
+            const registerTab = document.getElementById('auth-tab-register');
+            if (!loginForm || !registerForm || !loginTab || !registerTab) return;
+            const isLogin = tab === 'login';
+            loginForm.classList.toggle('hidden', !isLogin);
+            registerForm.classList.toggle('hidden', isLogin);
+            loginTab.classList.toggle('bg-blue-600', isLogin);
+            loginTab.classList.toggle('text-white', isLogin);
+            loginTab.classList.toggle('bg-gray-100', !isLogin);
+            loginTab.classList.toggle('text-gray-600', !isLogin);
+            registerTab.classList.toggle('bg-blue-600', !isLogin);
+            registerTab.classList.toggle('text-white', !isLogin);
+            registerTab.classList.toggle('bg-gray-100', isLogin);
+            registerTab.classList.toggle('text-gray-600', isLogin);
+            setAuthError('auth-login-error', '');
+            setAuthError('auth-register-error', '');
+        };
+
+        window.loginWithEmail = () => {
+            const emailInput = document.getElementById('auth-login-email');
+            const passwordInput = document.getElementById('auth-login-password');
+            const email = emailInput?.value.trim().toLowerCase();
+            const password = passwordInput?.value || '';
+            setAuthError('auth-login-error', '');
+            if (!email || !password) {
+                setAuthError('auth-login-error', '請輸入郵箱與密碼。');
+                return;
+            }
+            const users = getStoredUsers();
+            const match = users.find(user => user.email === email && user.password === password);
+            if (!match) {
+                setAuthError('auth-login-error', '帳號或密碼錯誤，請重新輸入。');
+                return;
+            }
+            setCurrentUserEmail(email);
+            updateAuthUI();
+        };
+
+        window.registerWithEmail = () => {
+            const emailInput = document.getElementById('auth-register-email');
+            const passwordInput = document.getElementById('auth-register-password');
+            const confirmInput = document.getElementById('auth-register-confirm');
+            const email = emailInput?.value.trim().toLowerCase();
+            const password = passwordInput?.value || '';
+            const confirm = confirmInput?.value || '';
+            setAuthError('auth-register-error', '');
+            if (!email || !password || !confirm) {
+                setAuthError('auth-register-error', '請完整填寫註冊資訊。');
+                return;
+            }
+            if (!isValidEmail(email)) {
+                setAuthError('auth-register-error', '郵箱格式不正確。');
+                return;
+            }
+            if (password.length < 6) {
+                setAuthError('auth-register-error', '密碼至少需要 6 碼。');
+                return;
+            }
+            if (password !== confirm) {
+                setAuthError('auth-register-error', '兩次輸入的密碼不一致。');
+                return;
+            }
+            const users = getStoredUsers();
+            if (users.some(user => user.email === email)) {
+                setAuthError('auth-register-error', '此郵箱已註冊，請直接登入。');
+                return;
+            }
+            users.push({ email, password });
+            saveStoredUsers(users);
+            setCurrentUserEmail(email);
+            updateAuthUI();
+            if (emailInput) emailInput.value = '';
+            if (passwordInput) passwordInput.value = '';
+            if (confirmInput) confirmInput.value = '';
+        };
+
+        window.logoutUser = () => {
+            clearCurrentUserEmail();
+            updateAuthUI();
+            switchAuthTab('login');
+        };
 
         function isPlaceholderFirebaseConfig(cfg) {
             return !cfg.apiKey || cfg.apiKey.startsWith('YOUR_') || !cfg.projectId || cfg.projectId.includes('YOUR_PROJECT_ID');
@@ -1044,6 +1237,10 @@
             const versionTag = document.getElementById('app-version-tag');
             if (versionTag) versionTag.textContent = APP_VERSION;
             applyLanguagePreferences();
+            updateAuthUI();
+            if (!getCurrentUserEmail()) {
+                switchAuthTab('login');
+            }
             const localData = loadLocalRecords();
             if (localData.length) setAllRecords(localData);
             renderAnalyticsYearOptions();
@@ -1541,6 +1738,7 @@
         let isAdminLoggedIn = false;
         window.checkAdminLogin = () => { if (document.getElementById('admin-user').value === CREDENTIALS.user && document.getElementById('admin-pass').value === CREDENTIALS.pass) { isAdminLoggedIn = true; document.getElementById('admin-login').classList.add('hidden'); document.getElementById('admin-dashboard').classList.remove('hidden'); renderAdminTable(); } else document.getElementById('login-error').classList.remove('hidden'); };
         window.logoutAdmin = () => { isAdminLoggedIn = false; document.getElementById('admin-login').classList.remove('hidden'); document.getElementById('admin-dashboard').classList.add('hidden'); document.getElementById('admin-user').value=''; document.getElementById('admin-pass').value=''; };
+
         window.openEditModal = (id, idx) => { 
             try {
                 const records = Array.isArray(window.allRecords) ? window.allRecords : [];
