@@ -91,7 +91,7 @@
                         <span class="text-xs mr-1">🌐</span> <span id="lang-btn-text">繁/简</span>
                     </button>
                     <a id="admin-nav-link" href="#admin-panel" class="text-blue-600 hover:text-blue-800 font-bold flex items-center bg-blue-50 px-3 py-1 rounded-full">
-                        <span class="mr-1">🔒</span> 管理後台
+                        <span class="mr-1">📋</span> 面談紀錄總覽
                     </a>
                 </nav>
                 <div id="auth-user-controls" class="hidden items-center space-x-2 text-xs sm:text-sm">
@@ -503,16 +503,19 @@
         </section>
         
         <!-- ADMIN PANEL SECTION -->
-        <section id="admin-panel" class="hidden py-16 bg-gray-800 text-white rounded-t-3xl mt-8">
+        <section id="admin-panel" class="hidden py-16 bg-white text-gray-800 rounded-3xl mt-8 border border-gray-200 shadow-sm">
             <div class="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8">
                 <div class="mb-8 text-center">
-                    <h3 class="text-2xl font-bold flex items-center justify-center"><span class="mr-2">🔒</span> 管理後台</h3>
-                    <p class="text-gray-400 text-sm mt-1">後台管理已取消登入權限，直接提供資料檢視功能</p>
+                    <h3 class="text-2xl font-bold flex items-center justify-center text-gray-900"><span class="mr-2">📋</span> 所有面談紀錄總覽</h3>
+                    <p class="text-gray-500 text-sm mt-2">提供快速檢視與編輯記錄，方便追蹤離職案件</p>
                 </div>
 
                 <div id="admin-dashboard">
-                    <div class="flex justify-between items-center mb-6 border-b border-gray-600 pb-4">
-                        <h4 class="text-lg font-bold">所有面談紀錄總覽</h4>
+                    <div class="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between mb-6 border-b border-gray-200 pb-4">
+                        <div>
+                            <h4 class="text-lg font-bold text-gray-900">紀錄列表</h4>
+                            <p class="text-xs text-gray-500 mt-1">包含草稿與已結案紀錄</p>
+                        </div>
                         <div class="flex gap-2">
                              <button onclick="exportToCSV()" class="bg-green-600 hover:bg-green-700 text-white text-sm px-4 py-2 rounded flex items-center shadow-lg"><span>📥</span> <span class="ml-2">下載報表 (CSV)</span></button>
                         </div>
@@ -583,7 +586,7 @@
     <!-- Standard Script Block -->
     <script>
         // Versioning
-        const APP_VERSION = 'v1.0.29';
+        const APP_VERSION = 'v1.0.30';
 
         // Global State
         window.allRecords = []; 
