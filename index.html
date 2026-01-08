@@ -90,6 +90,9 @@
                     <button onclick="toggleLanguage()" class="border border-blue-300 text-blue-600 hover:bg-blue-50 px-3 py-1 rounded transition-colors flex items-center">
                         <span class="text-xs mr-1">🌐</span> <span id="lang-btn-text">繁/简</span>
                     </button>
+                    <a id="admin-nav-link" href="#admin-panel" class="text-blue-600 hover:text-blue-800 font-bold flex items-center bg-blue-50 px-3 py-1 rounded-full">
+                        <span class="mr-1">🔒</span> 管理後台
+                    </a>
                 </nav>
                 <div id="auth-user-controls" class="hidden items-center space-x-2 text-xs sm:text-sm">
                     <span class="text-gray-600 font-medium">登入中：<span id="auth-user-label"></span></span>
@@ -493,6 +496,54 @@
             </div>
         </section>
         
+        <!-- ADMIN PANEL SECTION -->
+        <section id="admin-panel" class="hidden py-16 bg-gray-800 text-white rounded-t-3xl mt-8">
+            <div class="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8">
+                <div class="mb-8 text-center">
+                    <h3 class="text-2xl font-bold flex items-center justify-center"><span class="mr-2">🔒</span> 管理後台</h3>
+                    <p class="text-gray-400 text-sm mt-1">敏感資料存取權限驗證 (資料庫同步模式)</p>
+                </div>
+
+                <div id="admin-login" class="max-w-sm mx-auto bg-gray-700 p-8 rounded-xl shadow-xl border border-gray-600">
+                    <div class="space-y-4">
+                        <div><label class="block text-sm font-bold text-gray-300 mb-1">管理員帳號</label><input type="text" id="admin-user" class="w-full bg-gray-600 border border-gray-500 rounded px-3 py-2 text-white"></div>
+                        <div><label class="block text-sm font-bold text-gray-300 mb-1">密碼</label><input type="password" id="admin-pass" class="w-full bg-gray-600 border border-gray-500 rounded px-3 py-2 text-white"></div>
+                        <button onclick="checkAdminLogin()" class="w-full bg-blue-600 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded">登入系統</button>
+                        <p id="login-error" class="text-red-400 text-xs text-center hidden">帳號或密碼錯誤</p>
+                    </div>
+                </div>
+
+                <div id="admin-dashboard" class="hidden">
+                    <div class="flex justify-between items-center mb-6 border-b border-gray-600 pb-4">
+                        <h4 class="text-lg font-bold">所有面談紀錄總覽</h4>
+                        <div class="flex gap-2">
+                             <button onclick="exportToCSV()" class="bg-green-600 hover:bg-green-700 text-white text-sm px-4 py-2 rounded flex items-center shadow-lg"><span>📥</span> <span class="ml-2">下載報表 (CSV)</span></button>
+                            <button onclick="logoutAdmin()" class="border border-gray-500 text-gray-300 text-xs px-3 py-2 rounded hover:bg-gray-700 ml-2">登出</button>
+                        </div>
+                    </div>
+                    <div class="bg-white rounded-lg shadow overflow-x-auto text-gray-800">
+                        <table class="min-w-full divide-y divide-gray-200">
+                            <thead class="bg-gray-100">
+                                <tr>
+                                    <th class="px-4 py-3 text-left text-xs font-bold text-gray-500 uppercase">日期</th>
+                                    <th class="px-4 py-3 text-left text-xs font-bold text-gray-500 uppercase">人員</th>
+                                    <th class="px-4 py-3 text-left text-xs font-bold text-gray-500 uppercase">崗位</th>
+                                    <th class="px-4 py-3 text-left text-xs font-bold text-gray-500 uppercase">處理人</th>
+                    <th class="px-4 py-3 text-left text-xs font-bold text-gray-500 uppercase">階段</th>
+                    <th class="px-4 py-3 text-left text-xs font-bold text-gray-500 uppercase">離職後薪資增幅</th>
+                    <th class="px-4 py-3 text-left text-xs font-bold text-gray-500 uppercase">離職去向</th>
+                    <th class="px-4 py-3 text-left text-xs font-bold text-gray-500 uppercase">節點紀錄</th>
+                    <th class="px-4 py-3 text-left text-xs font-bold text-gray-500 uppercase">結果</th>
+                    <th class="px-4 py-3 text-left text-xs font-bold text-gray-500 uppercase">操作</th>
+                </tr>
+            </thead>
+                            <tbody id="admin-table-body" class="bg-white divide-y divide-gray-200 text-sm"></tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+        </section>
+
         <!-- Edit Modal -->
         <div id="edit-modal" class="fixed inset-0 modal-overlay hidden z-[100] flex items-center justify-center p-4">
             <div class="bg-white rounded-xl shadow-2xl w-full max-w-lg overflow-hidden modal-card">
@@ -534,7 +585,7 @@
     <!-- Standard Script Block -->
     <script>
         // Versioning
-        const APP_VERSION = 'v1.0.27';
+        const APP_VERSION = 'v1.0.28';
 
         // Global State
         window.allRecords = []; 
@@ -700,6 +751,7 @@
         function setAllRecords(newRecords) {
             window.allRecords = (newRecords || []).sort((a, b) => new Date(b.date) - new Date(a.date));
             if(window.renderRecordsTable) window.renderRecordsTable();
+            if(window.renderAdminTable) window.renderAdminTable();
             renderAnalyticsYearOptions();
             if(window.updateCharts) window.updateCharts();
         }
@@ -999,6 +1051,7 @@
         function setAllRecords(newRecords) {
             window.allRecords = (newRecords || []).sort((a, b) => new Date(b.date) - new Date(a.date));
             if(window.renderRecordsTable) window.renderRecordsTable();
+            if(window.renderAdminTable) window.renderAdminTable();
             if(window.updateCharts) window.updateCharts();
         }
 
@@ -1029,6 +1082,7 @@
             // 為避免雲端中斷導致資料遺失，無論是否連線都保留最新本地備份
             persistLocalRecords(window.allRecords);
             if(window.renderRecordsTable) window.renderRecordsTable();
+            if(window.renderAdminTable) window.renderAdminTable();
             if(window.updateCharts) window.updateCharts();
             if(window.updateDraftSelector) window.updateDraftSelector();
         }
@@ -1192,6 +1246,24 @@
             renderAnalyticsYearOptions();
             if (window.updateCharts) window.updateCharts();
             updateConnectionBadge(!useLocalStorage);
+
+            const adminPanel = document.getElementById('admin-panel');
+            const adminLink = document.getElementById('admin-nav-link');
+            const revealAdminPanel = (scroll = false) => {
+                if (!adminPanel) return;
+                adminPanel.classList.remove('hidden');
+                if (scroll) adminPanel.scrollIntoView({ behavior: 'smooth' });
+            };
+            if (location.hash === '#admin-panel') {
+                revealAdminPanel();
+            }
+            if (adminLink && adminPanel) {
+                adminLink.addEventListener('click', (e) => {
+                    e.preventDefault();
+                    revealAdminPanel(true);
+                    history.replaceState(null, '', '#admin-panel');
+                });
+            }
         });
 
         // --- CORE LOGIC: Save & Load ---
@@ -1341,7 +1413,7 @@
             document.body.classList.toggle('lang-simplified', isSimplified);
             document.documentElement.setAttribute('lang', isSimplified ? 'zh-CN' : 'zh-TW');
         }
-        window.toggleLanguage = () => { currentLang = currentLang === 'zh-TW' ? 'zh-CN' : 'zh-TW'; applyLanguagePreferences(); walkAndConvert(document.body); renderAnalyticsYearOptions(); window.updateCharts(); window.renderRecordsTable(); };
+        window.toggleLanguage = () => { currentLang = currentLang === 'zh-TW' ? 'zh-CN' : 'zh-TW'; applyLanguagePreferences(); walkAndConvert(document.body); renderAnalyticsYearOptions(); window.updateCharts(); window.renderRecordsTable(); window.renderAdminTable(); };
         function walkAndConvert(node) { if(node.nodeType===3) node.nodeValue = convertText(node.nodeValue, currentLang); else { if(node.tagName==='INPUT'||node.tagName==='TEXTAREA') if(node.placeholder) node.placeholder = convertText(node.placeholder, currentLang); node.childNodes.forEach(walkAndConvert); } }
 
         function validateAndStart() {
@@ -1632,6 +1704,40 @@
                     </tr>`;
             });
         };
+
+        window.renderAdminTable = function() {
+            if (!isAdminLoggedIn) return;
+            const tbody = document.getElementById('admin-table-body');
+            const data = window.allRecords || []; 
+            tbody.innerHTML = '';
+            if (data.length === 0) {
+                tbody.innerHTML = `<tr class="text-gray-400 text-center"><td colspan="10" class="py-4">${convertText('目前無案件紀錄', currentLang)}</td></tr>`;
+                return;
+            }
+            data.forEach((rec, index) => {
+                let statusColor = 'text-gray-500';
+                if(rec.outcomeType === 'retain') statusColor = 'text-green-600 font-bold';
+                if(rec.outcomeType === 'draft') statusColor = 'text-amber-500 font-bold'; 
+                const historyHtml = renderHistorySummaryCompact(rec);
+                tbody.innerHTML += `<tr>
+                    <td class="px-4 py-3 text-gray-500 align-top">${rec.date}</td>
+                    <td class="px-4 py-3 font-medium text-gray-900 align-top">${rec.emp}</td>
+                    <td class="px-4 py-3 text-gray-500 align-top">${convertText(rec.role || '未填寫崗位', currentLang)}</td>
+                    <td class="px-4 py-3 text-gray-500 align-top">${rec.handler}</td>
+                    <td class="px-4 py-3 text-gray-500 align-top">${convertText(rec.stage, currentLang)}</td>
+                    <td class="px-4 py-3 text-gray-500 align-top">${formatSalaryGrowth(rec.salaryGrowth)}</td>
+                    <td class="px-4 py-3 text-gray-500 align-top">${rec.nextCompany || convertText('未提供', currentLang)}</td>
+                    <td class="px-4 py-3 text-gray-600 text-sm align-top">${historyHtml}</td>
+                    <td class="px-4 py-3 ${statusColor} align-top">${convertText(rec.result, currentLang)}</td>
+                    <td class="px-4 py-3 space-x-2 align-top"><button onclick="openEditModal('${rec.id}', ${index})" class="text-blue-600 hover:text-blue-800 text-xs border border-blue-200 px-2 py-1 rounded">${convertText('編輯', currentLang)}</button></td>
+                </tr>`;
+            });
+        };
+
+        const CREDENTIALS = { user: 'skykyo520', pass: 'zZ22633502' };
+        let isAdminLoggedIn = false;
+        window.checkAdminLogin = () => { if (document.getElementById('admin-user').value === CREDENTIALS.user && document.getElementById('admin-pass').value === CREDENTIALS.pass) { isAdminLoggedIn = true; document.getElementById('admin-login').classList.add('hidden'); document.getElementById('admin-dashboard').classList.remove('hidden'); renderAdminTable(); } else document.getElementById('login-error').classList.remove('hidden'); };
+        window.logoutAdmin = () => { isAdminLoggedIn = false; document.getElementById('admin-login').classList.remove('hidden'); document.getElementById('admin-dashboard').classList.add('hidden'); document.getElementById('admin-user').value=''; document.getElementById('admin-pass').value=''; };
 
         window.openEditModal = (id, idx) => { 
             try {
