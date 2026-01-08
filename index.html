@@ -83,16 +83,14 @@
             </div>
             <div class="flex items-center space-x-4">
                 <nav class="hidden md:flex space-x-4 text-sm font-medium text-gray-600 items-center">
-                    <a href="#case-processing" class="hover:text-blue-700 transition-colors">案件處理</a>
-                    <a href="#records" class="hover:text-blue-700 transition-colors">歷史紀錄</a>
-                    <a href="#analytics" class="hover:text-blue-700 transition-colors">數據看板</a>
-                    <a href="#process-map" class="hover:text-blue-700 transition-colors">標準SOP</a>
-                    <button onclick="toggleLanguage()" class="border border-blue-300 text-blue-600 hover:bg-blue-50 px-3 py-1 rounded transition-colors flex items-center">
+                    <a href="#case-processing" class="hover:text-blue-700 transition-colors whitespace-nowrap">案件處理</a>
+                    <a href="#records" class="hover:text-blue-700 transition-colors whitespace-nowrap">歷史紀錄</a>
+                    <a href="#analytics" class="hover:text-blue-700 transition-colors whitespace-nowrap">數據看板</a>
+                    <a href="#process-map" class="hover:text-blue-700 transition-colors whitespace-nowrap">標準SOP</a>
+                    <a id="admin-nav-link" href="#admin-panel" class="hover:text-blue-700 transition-colors whitespace-nowrap">面談紀錄總覽</a>
+                    <button onclick="toggleLanguage()" class="border border-blue-300 text-blue-600 hover:bg-blue-50 px-3 py-1 rounded transition-colors flex items-center whitespace-nowrap">
                         <span class="text-xs mr-1">🌐</span> <span id="lang-btn-text">繁/简</span>
                     </button>
-                    <a id="admin-nav-link" href="#admin-panel" class="text-blue-600 hover:text-blue-800 font-bold flex items-center bg-blue-50 px-3 py-1 rounded-full">
-                        <span class="mr-1">🔒</span> 管理後台
-                    </a>
                 </nav>
                 <div id="auth-user-controls" class="hidden items-center space-x-2 text-xs sm:text-sm">
                     <span class="text-gray-600 font-medium">登入中：<span id="auth-user-label"></span></span>
@@ -189,6 +187,10 @@
                                     <label class="block text-xs font-bold text-gray-500 mb-1">直屬主管姓名 <span class="text-red-500">*</span></label>
                                     <input type="text" id="sup-name" class="input-field" placeholder="請輸入全名">
                                 </div>
+                                <div>
+                                    <label class="block text-xs font-bold text-gray-500 mb-1">離職日期 <span class="text-red-500">*</span></label>
+                                    <input type="date" id="emp-resign-date" class="input-field">
+                                </div>
                             </div>
 
                             <div id="notes-history-area" class="hidden mb-4 space-y-3"></div>
@@ -240,7 +242,8 @@
                                 崗位: <strong id="v-emp-role" class="mr-4"></strong>
                             </div>
                             <div class="text-gray-600">
-                                主管: <strong id="v-sup-name"></strong>
+                                主管: <strong id="v-sup-name" class="mr-4"></strong>
+                                離職日期: <strong id="v-emp-resign-date"></strong>
                             </div>
                         </div>
 
@@ -291,6 +294,7 @@
                     <thead class="bg-gray-50">
                         <tr>
                             <th class="px-6 py-3 text-left text-xs font-bold text-gray-500 uppercase">日期</th>
+                            <th class="px-6 py-3 text-left text-xs font-bold text-gray-500 uppercase">離職日期</th>
                             <th class="px-6 py-3 text-left text-xs font-bold text-gray-500 uppercase">離職人員</th>
                             <th class="px-6 py-3 text-left text-xs font-bold text-gray-500 uppercase">崗位</th>
                             <th class="px-6 py-3 text-left text-xs font-bold text-gray-500 uppercase">處理人</th>
@@ -497,28 +501,21 @@
         </section>
         
         <!-- ADMIN PANEL SECTION -->
-        <section id="admin-panel" class="hidden py-16 bg-gray-800 text-white rounded-t-3xl mt-8">
+        <section id="admin-panel" class="hidden py-16 bg-white text-gray-800 rounded-3xl mt-8 border border-gray-200 shadow-sm">
             <div class="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8">
                 <div class="mb-8 text-center">
-                    <h3 class="text-2xl font-bold flex items-center justify-center"><span class="mr-2">🔒</span> 管理後台</h3>
-                    <p class="text-gray-400 text-sm mt-1">敏感資料存取權限驗證 (資料庫同步模式)</p>
+                    <h3 class="text-2xl font-bold flex items-center justify-center text-gray-900"><span class="mr-2">📋</span> 所有面談紀錄總覽</h3>
+                    <p class="text-gray-500 text-sm mt-2">提供快速檢視與編輯記錄，方便追蹤離職案件</p>
                 </div>
 
-                <div id="admin-login" class="max-w-sm mx-auto bg-gray-700 p-8 rounded-xl shadow-xl border border-gray-600">
-                    <div class="space-y-4">
-                        <div><label class="block text-sm font-bold text-gray-300 mb-1">管理員帳號</label><input type="text" id="admin-user" class="w-full bg-gray-600 border border-gray-500 rounded px-3 py-2 text-white"></div>
-                        <div><label class="block text-sm font-bold text-gray-300 mb-1">密碼</label><input type="password" id="admin-pass" class="w-full bg-gray-600 border border-gray-500 rounded px-3 py-2 text-white"></div>
-                        <button onclick="checkAdminLogin()" class="w-full bg-blue-600 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded">登入系統</button>
-                        <p id="login-error" class="text-red-400 text-xs text-center hidden">帳號或密碼錯誤</p>
-                    </div>
-                </div>
-
-                <div id="admin-dashboard" class="hidden">
-                    <div class="flex justify-between items-center mb-6 border-b border-gray-600 pb-4">
-                        <h4 class="text-lg font-bold">所有面談紀錄總覽</h4>
+                <div id="admin-dashboard">
+                    <div class="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between mb-6 border-b border-gray-200 pb-4">
+                        <div>
+                            <h4 class="text-lg font-bold text-gray-900">紀錄列表</h4>
+                            <p class="text-xs text-gray-500 mt-1">包含草稿與已結案紀錄</p>
+                        </div>
                         <div class="flex gap-2">
                              <button onclick="exportToCSV()" class="bg-green-600 hover:bg-green-700 text-white text-sm px-4 py-2 rounded flex items-center shadow-lg"><span>📥</span> <span class="ml-2">下載報表 (CSV)</span></button>
-                            <button onclick="logoutAdmin()" class="border border-gray-500 text-gray-300 text-xs px-3 py-2 rounded hover:bg-gray-700 ml-2">登出</button>
                         </div>
                     </div>
                     <div class="bg-white rounded-lg shadow overflow-x-auto text-gray-800">
@@ -526,6 +523,7 @@
                             <thead class="bg-gray-100">
                                 <tr>
                                     <th class="px-4 py-3 text-left text-xs font-bold text-gray-500 uppercase">日期</th>
+                                    <th class="px-4 py-3 text-left text-xs font-bold text-gray-500 uppercase">離職日期</th>
                                     <th class="px-4 py-3 text-left text-xs font-bold text-gray-500 uppercase">人員</th>
                                     <th class="px-4 py-3 text-left text-xs font-bold text-gray-500 uppercase">崗位</th>
                                     <th class="px-4 py-3 text-left text-xs font-bold text-gray-500 uppercase">處理人</th>
@@ -556,6 +554,7 @@
                     <div><label class="block text-xs font-bold text-gray-500 mb-1">建檔日期</label><input type="date" id="edit-date" class="input-field bg-gray-100" readonly></div>
                     <div><label class="block text-xs font-bold text-gray-500 mb-1">離職人員</label><input type="text" id="edit-emp" class="input-field"></div>
                     <div><label class="block text-xs font-bold text-gray-500 mb-1">崗位</label><input type="text" id="edit-role" class="input-field" placeholder="例：前端工程師"></div>
+                    <div><label class="block text-xs font-bold text-gray-500 mb-1">離職日期</label><input type="date" id="edit-resign-date" class="input-field"></div>
                     <div><label class="block text-xs font-bold text-gray-500 mb-1">最後處理人</label><input type="text" id="edit-handler" class="input-field"></div>
                     <div><label class="block text-xs font-bold text-gray-500 mb-1">目前階段</label><input type="text" id="edit-stage" class="input-field" placeholder="如：留才確認 / 彥靈總 / 直屬主管"></div>
                     <div><label class="block text-xs font-bold text-gray-500 mb-1">離職後去向（公司）</label><input type="text" id="edit-next-company" class="input-field" placeholder="例：Google / AWS / 其他"></div>
@@ -585,12 +584,12 @@
     <!-- Standard Script Block -->
     <script>
         // Versioning
-        const APP_VERSION = 'v1.0.28';
+        const APP_VERSION = 'v1.0.32';
 
         // Global State
         window.allRecords = []; 
         window.lastCloudSync = window.lastCloudSync || null;
-        let currentSessionData = { empName: '', role: '', supName: '', meetingTime: '', notes: { supervisor: '', showRex: '', yanling: '', retention: '' } };
+        let currentSessionData = { empName: '', role: '', supName: '', resignDate: '', meetingTime: '', notes: { supervisor: '', showRex: '', yanling: '', retention: '' } };
         let currentStepKey = 'start';
         let retentionChartInstance = null;
         let outcomeChartInstance = null;
@@ -1272,9 +1271,10 @@
             let emp = document.getElementById('emp-name').value.trim();
             let role = document.getElementById('emp-role').value.trim();
             let sup = document.getElementById('sup-name').value.trim();
-            if(!emp || !sup || !role) {
+            let resignDate = document.getElementById('emp-resign-date').value;
+            if(!emp || !sup || !role || !resignDate) {
                 if (!allowIncomplete && showAlert) {
-                    alert("請至少輸入人員姓名、崗位與主管姓名才能暫存。");
+                    alert("請至少輸入人員姓名、崗位、主管姓名與離職日期才能暫存。");
                 }
                 return false;
             }
@@ -1282,6 +1282,7 @@
             currentSessionData.empName = emp;
             currentSessionData.role = role;
             currentSessionData.supName = sup;
+            currentSessionData.resignDate = resignDate;
             syncCurrentStepInputs();
 
             const existing = window.allRecords.find(r => r.id === window.currentDraftId);
@@ -1292,6 +1293,7 @@
                 emp: currentSessionData.empName,
                 role: currentSessionData.role,
                 handler: currentSessionData.supName,
+                resignDate: currentSessionData.resignDate,
                 stage: flowConfig[currentStepKey]?.stageName || '案件建立',
                 lastNote,
                 result: '進行中 (Draft)',
@@ -1346,13 +1348,14 @@
                 currentStepKey = stepKey;
 
                 // Restore Data
-                const defaultData = { empName: '', role: '', supName: '', meetingTime: '', notes: { supervisor: '', showRex: '', yanling: '', retention: '' } };
+                const defaultData = { empName: '', role: '', supName: '', resignDate: '', meetingTime: '', notes: { supervisor: '', showRex: '', yanling: '', retention: '' } };
                 
                 // Fallback for old data without nested object
                 let sourceData = record.draftSessionData || {
                     empName: record.emp,
                     role: record.role,
                     supName: record.handler,
+                    resignDate: record.resignDate,
                     notes: { supervisor: record.lastNote } // Crude fallback
                 };
 
@@ -1367,9 +1370,11 @@
                 document.getElementById('emp-name').value = currentSessionData.empName;
                 document.getElementById('emp-role').value = currentSessionData.role || '';
                 document.getElementById('sup-name').value = currentSessionData.supName;
+                document.getElementById('emp-resign-date').value = currentSessionData.resignDate || '';
                 document.getElementById('v-emp-name').textContent = currentSessionData.empName;
                 document.getElementById('v-emp-role').textContent = currentSessionData.role || convertText('未填寫崗位', currentLang);
                 document.getElementById('v-sup-name').textContent = currentSessionData.supName;
+                document.getElementById('v-emp-resign-date').textContent = currentSessionData.resignDate || convertText('未填寫', currentLang);
                 updateDraftStatusBadge(`編輯草稿：${currentSessionData.empName}`);
                 
                 if(stepKey !== 'start') {
@@ -1420,15 +1425,18 @@
             const empName = document.getElementById('emp-name').value.trim();
             const empRole = document.getElementById('emp-role').value.trim();
             const supName = document.getElementById('sup-name').value.trim();
-            if (!empName || !supName || !empRole) { alert(convertText('請輸入完整資訊', currentLang)); return; }
+            const resignDate = document.getElementById('emp-resign-date').value;
+            if (!empName || !supName || !empRole || !resignDate) { alert(convertText('請輸入完整資訊', currentLang)); return; }
             currentSessionData.empName = empName;
             currentSessionData.role = empRole;
             currentSessionData.supName = supName;
+            currentSessionData.resignDate = resignDate;
             window.currentDraftId = null;
             updateDraftStatusBadge(null);
             document.getElementById('v-emp-name').textContent = empName;
             document.getElementById('v-emp-role').textContent = empRole;
             document.getElementById('v-sup-name').textContent = supName;
+            document.getElementById('v-emp-resign-date').textContent = resignDate;
             document.getElementById('case-info').classList.remove('hidden');
             document.getElementById('input-area-start').classList.add('hidden');
             transitionTo('supervisor');
@@ -1523,6 +1531,7 @@
                         emp: currentSessionData.empName,
                         role: currentSessionData.role,
                         handler: handler,
+                        resignDate: currentSessionData.resignDate,
                         stage: config.stageName,
                         lastNote,
                         result: config.result || config.title,
@@ -1593,6 +1602,7 @@
             document.getElementById('emp-name').value = '';
             document.getElementById('emp-role').value = '';
             document.getElementById('sup-name').value = '';
+            document.getElementById('emp-resign-date').value = '';
             document.getElementById('input-area-start').classList.remove('hidden');
             document.getElementById('input-area-notes').classList.add('hidden');
             document.getElementById('input-area-meeting').classList.add('hidden');
@@ -1600,7 +1610,7 @@
             document.getElementById('case-info').classList.add('hidden');
             const draftSelect = document.getElementById('draft-select');
             if (draftSelect) draftSelect.value = ""; 
-            currentSessionData = { empName: '', role: '', supName: '', meetingTime: '', notes: { supervisor: '', showRex: '', yanling: '', retention: '' } };
+            currentSessionData = { empName: '', role: '', supName: '', resignDate: '', meetingTime: '', notes: { supervisor: '', showRex: '', yanling: '', retention: '' } };
             updateDraftStatusBadge(null);
             
             const config = flowConfig['start'];
@@ -1676,7 +1686,7 @@
             const data = window.allRecords || []; 
             tbody.innerHTML = '';
             if (data.length === 0) {
-                tbody.innerHTML = `<tr class="text-gray-400 text-sm text-center"><td colspan="7" class="py-4">${convertText('尚無紀錄', currentLang)}</td></tr>`;
+                tbody.innerHTML = `<tr class="text-gray-400 text-sm text-center"><td colspan="8" class="py-4">${convertText('尚無紀錄', currentLang)}</td></tr>`;
                 return;
             }
             data.forEach((rec, idx) => {
@@ -1695,6 +1705,7 @@
                 tbody.innerHTML += `
                     <tr class="${rowClass}">
                         <td class="px-6 py-4 text-sm text-gray-500">${rec.date}</td>
+                        <td class="px-6 py-4 text-sm text-gray-500">${rec.resignDate || convertText('未填寫', currentLang)}</td>
                         <td class="px-6 py-4 font-medium text-gray-900">${rec.emp}</td>
                         <td class="px-6 py-4 text-sm text-gray-500">${convertText(rec.role || '未填寫崗位', currentLang)}</td>
                         <td class="px-6 py-4 text-sm text-gray-500">${rec.handler}</td>
@@ -1706,12 +1717,11 @@
         };
 
         window.renderAdminTable = function() {
-            if (!isAdminLoggedIn) return;
             const tbody = document.getElementById('admin-table-body');
             const data = window.allRecords || []; 
             tbody.innerHTML = '';
             if (data.length === 0) {
-                tbody.innerHTML = `<tr class="text-gray-400 text-center"><td colspan="10" class="py-4">${convertText('目前無案件紀錄', currentLang)}</td></tr>`;
+                tbody.innerHTML = `<tr class="text-gray-400 text-center"><td colspan="11" class="py-4">${convertText('目前無案件紀錄', currentLang)}</td></tr>`;
                 return;
             }
             data.forEach((rec, index) => {
@@ -1721,6 +1731,7 @@
                 const historyHtml = renderHistorySummaryCompact(rec);
                 tbody.innerHTML += `<tr>
                     <td class="px-4 py-3 text-gray-500 align-top">${rec.date}</td>
+                    <td class="px-4 py-3 text-gray-500 align-top">${rec.resignDate || convertText('未填寫', currentLang)}</td>
                     <td class="px-4 py-3 font-medium text-gray-900 align-top">${rec.emp}</td>
                     <td class="px-4 py-3 text-gray-500 align-top">${convertText(rec.role || '未填寫崗位', currentLang)}</td>
                     <td class="px-4 py-3 text-gray-500 align-top">${rec.handler}</td>
@@ -1733,11 +1744,6 @@
                 </tr>`;
             });
         };
-
-        const CREDENTIALS = { user: 'skykyo520', pass: 'zZ22633502' };
-        let isAdminLoggedIn = false;
-        window.checkAdminLogin = () => { if (document.getElementById('admin-user').value === CREDENTIALS.user && document.getElementById('admin-pass').value === CREDENTIALS.pass) { isAdminLoggedIn = true; document.getElementById('admin-login').classList.add('hidden'); document.getElementById('admin-dashboard').classList.remove('hidden'); renderAdminTable(); } else document.getElementById('login-error').classList.remove('hidden'); };
-        window.logoutAdmin = () => { isAdminLoggedIn = false; document.getElementById('admin-login').classList.remove('hidden'); document.getElementById('admin-dashboard').classList.add('hidden'); document.getElementById('admin-user').value=''; document.getElementById('admin-pass').value=''; };
 
         window.openEditModal = (id, idx) => { 
             try {
@@ -1762,7 +1768,8 @@
                     noteRet: document.getElementById('edit-note-retention'),
                     note: document.getElementById('edit-note'),
                     result: document.getElementById('edit-result'),
-                    role: document.getElementById('edit-role')
+                    role: document.getElementById('edit-role'),
+                    resignDate: document.getElementById('edit-resign-date')
                 };
                 if (Object.values(fields).some(el => !el) || !modal) {
                     alert(convertText('編輯介面未正確載入', currentLang));
@@ -1775,6 +1782,7 @@
                 fields.role.value = r.role || '';
                 fields.handler.value = r.handler || ''; 
                 fields.stage.value = r.stage || ''; 
+                fields.resignDate.value = r.resignDate || '';
                 fields.nextCompany.value = r.nextCompany || ''; 
                 fields.salaryGrowth.value = formatSalaryGrowth(r.salaryGrowth, false); 
                 fields.noteSup.value = history.notes?.supervisor || ''; 
@@ -1817,6 +1825,7 @@
                 date: document.getElementById('edit-date').value, 
                 emp: document.getElementById('edit-emp').value, 
                 role: document.getElementById('edit-role').value || '',
+                resignDate: document.getElementById('edit-resign-date').value || '',
                 handler: document.getElementById('edit-handler').value, 
                 stage: document.getElementById('edit-stage').value || '未標示階段',
                 nextCompany: document.getElementById('edit-next-company').value || '',
@@ -1852,14 +1861,14 @@
         window.exportToCSV = () => { 
             const data = window.allRecords || []; 
             if(!data.length){ alert('No Data'); return; } 
-            let c = "\ufeff" + ['日期','人員','崗位','處理人','階段','離職後薪資增幅','離職去向','節點紀錄','結果'].map(h=>convertText(h,currentLang)).join(',') + "\n"; 
+            let c = "\ufeff" + ['日期','離職日期','人員','崗位','處理人','階段','離職後薪資增幅','離職去向','節點紀錄','結果'].map(h=>convertText(h,currentLang)).join(',') + "\n"; 
             data.forEach(r => { 
                 const historyText = flattenHistoryText(r).replace(/"/g,'""'); 
                 const role = convertText(r.role || '未填寫崗位', currentLang).replace(/"/g,'""');
                 const nextCo = (r.nextCompany || '').replace(/"/g,'""'); 
                 const salary = formatSalaryGrowth(r.salaryGrowth);
                 const salaryCSV = salary === '—' ? '' : salary;
-                c += [r.date, r.emp, `"${role}"`, r.handler, r.stage, `"${salaryCSV}"`, `"${nextCo}"`, `"${historyText}"`, r.result].join(',') + "\n"; 
+                c += [r.date, r.resignDate || '', r.emp, `"${role}"`, r.handler, r.stage, `"${salaryCSV}"`, `"${nextCo}"`, `"${historyText}"`, r.result].join(',') + "\n"; 
             }); 
             const b = new Blob([c],{type:"text/csv;charset=utf-8;"}); 
             const l = document.createElement("a"); 
