@@ -83,16 +83,14 @@
             </div>
             <div class="flex items-center space-x-4">
                 <nav class="hidden md:flex space-x-4 text-sm font-medium text-gray-600 items-center">
-                    <a href="#case-processing" class="hover:text-blue-700 transition-colors">案件處理</a>
-                    <a href="#records" class="hover:text-blue-700 transition-colors">歷史紀錄</a>
-                    <a href="#analytics" class="hover:text-blue-700 transition-colors">數據看板</a>
-                    <a href="#process-map" class="hover:text-blue-700 transition-colors">標準SOP</a>
-                    <button onclick="toggleLanguage()" class="border border-blue-300 text-blue-600 hover:bg-blue-50 px-3 py-1 rounded transition-colors flex items-center">
+                    <a href="#case-processing" class="hover:text-blue-700 transition-colors whitespace-nowrap">案件處理</a>
+                    <a href="#records" class="hover:text-blue-700 transition-colors whitespace-nowrap">歷史紀錄</a>
+                    <a href="#analytics" class="hover:text-blue-700 transition-colors whitespace-nowrap">數據看板</a>
+                    <a href="#process-map" class="hover:text-blue-700 transition-colors whitespace-nowrap">標準SOP</a>
+                    <button onclick="toggleLanguage()" class="border border-blue-300 text-blue-600 hover:bg-blue-50 px-3 py-1 rounded transition-colors flex items-center whitespace-nowrap">
                         <span class="text-xs mr-1">🌐</span> <span id="lang-btn-text">繁/简</span>
                     </button>
-                    <a id="admin-nav-link" href="#admin-panel" class="text-blue-600 hover:text-blue-800 font-bold flex items-center bg-blue-50 px-3 py-1 rounded-full">
-                        <span class="mr-1">📋</span> 面談紀錄總覽
-                    </a>
+                    <a id="admin-nav-link" href="#admin-panel" class="hover:text-blue-700 transition-colors whitespace-nowrap">面談紀錄總覽</a>
                 </nav>
                 <div id="auth-user-controls" class="hidden items-center space-x-2 text-xs sm:text-sm">
                     <span class="text-gray-600 font-medium">登入中：<span id="auth-user-label"></span></span>
@@ -586,7 +584,7 @@
     <!-- Standard Script Block -->
     <script>
         // Versioning
-        const APP_VERSION = 'v1.0.30';
+        const APP_VERSION = 'v1.0.31';
 
         // Global State
         window.allRecords = []; 
