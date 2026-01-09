@@ -85,11 +85,11 @@
             </div>
             <div class="flex items-center space-x-4">
                 <nav class="hidden md:flex space-x-4 text-sm font-medium text-gray-600 items-center">
-                    <button type="button" class="hover:text-blue-700 transition-colors whitespace-nowrap tab-link" data-tab="case-processing">案件處理</button>
-                    <button type="button" class="hover:text-blue-700 transition-colors whitespace-nowrap tab-link" data-tab="records">歷史紀錄</button>
-                    <button type="button" class="hover:text-blue-700 transition-colors whitespace-nowrap tab-link" data-tab="analytics">數據看板</button>
-                    <button type="button" class="hover:text-blue-700 transition-colors whitespace-nowrap tab-link" data-tab="process-map">標準SOP</button>
-                    <button type="button" id="admin-nav-link" class="hover:text-blue-700 transition-colors whitespace-nowrap tab-link" data-tab="admin-panel">面談紀錄總覽</button>
+                    <button type="button" class="hover:text-blue-700 transition-colors whitespace-nowrap tab-link" data-tab="case-processing" data-testid="top-nav-case-processing">案件處理</button>
+                    <button type="button" class="hover:text-blue-700 transition-colors whitespace-nowrap tab-link" data-tab="records" data-testid="top-nav-records">歷史紀錄</button>
+                    <button type="button" class="hover:text-blue-700 transition-colors whitespace-nowrap tab-link" data-tab="analytics" data-testid="top-nav-analytics">數據看板</button>
+                    <button type="button" class="hover:text-blue-700 transition-colors whitespace-nowrap tab-link" data-tab="process-map" data-testid="top-nav-process-map">標準SOP</button>
+                    <button type="button" id="admin-nav-link" class="hover:text-blue-700 transition-colors whitespace-nowrap tab-link" data-tab="admin-panel" data-testid="top-nav-admin-panel">面談紀錄總覽</button>
                     <button onclick="toggleLanguage()" class="border border-blue-300 text-blue-600 hover:bg-blue-50 px-3 py-1 rounded transition-colors flex items-center whitespace-nowrap">
                         <span class="text-xs mr-1">🌐</span> <span id="lang-btn-text">繁/简</span>
                     </button>
@@ -162,11 +162,11 @@
                 <div class="text-xs text-slate-400">Firebase 雲端同步版</div>
             </div>
             <div class="space-y-2">
-                <button type="button" class="tab-link w-full active" data-tab="analytics">數據看板</button>
-                <button type="button" class="tab-link w-full" data-tab="case-processing">待辦事項</button>
-                <button type="button" class="tab-link w-full" data-tab="records">會議紀錄</button>
-                <button type="button" class="tab-link w-full" data-tab="process-map">標準SOP</button>
-                <button type="button" class="tab-link w-full" data-tab="admin-panel">面談紀錄總覽</button>
+                <button type="button" class="tab-link w-full active" data-tab="case-processing" data-testid="side-nav-case-processing">案件處理</button>
+                <button type="button" class="tab-link w-full" data-tab="records" data-testid="side-nav-records">歷史紀錄</button>
+                <button type="button" class="tab-link w-full" data-tab="analytics" data-testid="side-nav-analytics">數據看板</button>
+                <button type="button" class="tab-link w-full" data-tab="process-map" data-testid="side-nav-process-map">標準SOP</button>
+                <button type="button" class="tab-link w-full" data-tab="admin-panel" data-testid="side-nav-admin-panel">面談紀錄總覽</button>
             </div>
         </aside>
 
@@ -613,7 +613,7 @@
     <!-- Standard Script Block -->
     <script>
         // Versioning
-        const APP_VERSION = 'v1.0.34';
+        const APP_VERSION = 'v1.1.0';
 
         // Global State
         window.allRecords = []; 
@@ -717,6 +717,19 @@
                 default:
                     return '系統連線異常，請稍後再試。';
             }
+        }
+
+        function describeFirebaseError(error) {
+            const code = error?.code || '';
+            const messageMap = {
+                'auth/operation-not-allowed': '尚未啟用匿名或 Email/Password 登入',
+                'auth/configuration-not-found': '找不到 Firebase Auth 設定',
+                'auth/invalid-api-key': 'apiKey 無效',
+                'auth/invalid-custom-token': '自訂權杖無效',
+                'auth/network-request-failed': '網路連線失敗'
+            };
+            if (!code) return '';
+            return messageMap[code] ? `${code}（${messageMap[code]}）` : code;
         }
 
         function updateAuthUI() {
@@ -2110,9 +2123,10 @@
                     await signInAnonymously(auth);
                 }
             } catch (error) { 
+                const detail = describeFirebaseError(error);
                 console.error("Auth Failed", error); 
                 window.firebaseAuthApi = { enabled: false };
-                initializeLocalMode('Firebase 驗證失敗，改用離線備份');
+                initializeLocalMode(detail ? `Firebase 驗證失敗：${detail}` : 'Firebase 驗證失敗');
             }
         }
 
@@ -2141,9 +2155,10 @@
                     }
                 });
             } catch (e) {
+                const detail = describeFirebaseError(e);
                 console.error('Firebase 初始化失敗，改用離線備份模式', e);
                 window.firebaseAuthApi = { enabled: false };
-                initializeLocalMode('Firebase 初始化失敗');
+                initializeLocalMode(detail ? `Firebase 初始化失敗：${detail}` : 'Firebase 初始化失敗');
             }
         }
         bootstrapFirebase();
