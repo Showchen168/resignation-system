@@ -1,9 +1,10 @@
 {
   "name": "resignation-system",
-  "version": "v1.1.5",
+  "version": "v1.1.8",
   "private": true,
   "scripts": {
-    "test": "python -m pytest"
+    "test": "python -m pytest",
+    "test:e2e": "playwright test"
   },
   "devDependencies": {
     "@playwright/test": "^1.44.0"

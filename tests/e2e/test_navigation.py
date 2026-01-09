@@ -1,4 +1,5 @@
 from html.parser import HTMLParser
+import re
 from pathlib import Path
 
 
@@ -8,6 +9,7 @@ class NavLabelParser(HTMLParser):
         self._current_label = None
         self.top_labels = []
         self.side_labels = []
+        self._label_pattern = re.compile(r"[A-Za-z0-9\u4e00-\u9fff]")
 
     def handle_starttag(self, tag, attrs):
         if tag != "button":
@@ -28,6 +30,8 @@ class NavLabelParser(HTMLParser):
     def handle_data(self, data):
         label = data.strip()
         if not label or not self._current_label:
+            return
+        if not self._label_pattern.search(label):
             return
         if self._current_label == "top":
             self.top_labels.append(label)
