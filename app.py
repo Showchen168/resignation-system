@@ -6,7 +6,7 @@
     print(APP_VERSION)
 """
 
-APP_VERSION = "v1.1.1"
+APP_VERSION = "v1.1.2"
 
 
 def validate_version(version: str) -> None:

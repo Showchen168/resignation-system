@@ -137,7 +137,6 @@
                 <div class="mt-3 space-y-2 text-xs text-slate-300">
                     <div class="flex items-center gap-2">
                         <span id="connection-badge" class="text-[11px] font-bold px-2 py-[2px] rounded bg-yellow-100 text-yellow-800 border border-yellow-300">狀態：檢查中</span>
-                        <span class="text-[11px] text-slate-400">狀態</span>
                     </div>
                     <div id="sync-hint" class="text-[11px] text-slate-400">雲端同步時間：尚未同步</div>
                     <div id="setup-hint" class="text-[11px] text-amber-300 hidden">若要啟用雲端同步，請設定 Firebase 連線參數</div>
@@ -603,7 +602,7 @@
     <!-- Standard Script Block -->
     <script>
         // Versioning
-        const APP_VERSION = 'v1.1.1';
+        const APP_VERSION = 'v1.1.2';
 
         // Global State
         window.allRecords = []; 
@@ -727,6 +726,7 @@
             const code = error?.code || '';
             const messageMap = {
                 'auth/operation-not-allowed': '尚未啟用匿名或 Email/Password 登入',
+                'auth/admin-restricted-operation': '尚未啟用匿名或 Email/Password 登入',
                 'auth/configuration-not-found': '找不到 Firebase Auth 設定',
                 'auth/invalid-api-key': 'apiKey 無效',
                 'auth/invalid-custom-token': '自訂權杖無效',
@@ -1320,13 +1320,19 @@
             el.classList.remove('hidden');
         }
 
+        function formatSetupHint(reason = '') {
+            const guidance = '若要啟用雲端同步，請在 Firebase 專案啟用 Email/Password 或匿名登入（或提供自訂權杖 __initial_auth_token），並將 __firebase_config（apiKey、authDomain、projectId、storageBucket、messagingSenderId、appId）注入前端。';
+            if (!reason) return guidance;
+            return `${reason}。${guidance}`;
+        }
+
         function initializeLocalMode(reason = '') {
             useLocalStorage = true;
             const fallback = loadLocalRecords();
             setAllRecords(fallback);
             if(reason) console.warn(`已切換離線備份模式：${reason}`);
             updateConnectionBadge(false, reason);
-            showSetupHint(`${reason ? `${reason}。` : ''}若要啟用雲端同步，請在 Firebase 專案啟用 Email/Password 或匿名登入（或提供自訂權杖 __initial_auth_token），並將 __firebase_config（apiKey、authDomain、projectId、storageBucket、messagingSenderId、appId）注入前端。`);
+            showSetupHint(formatSetupHint(reason));
         }
         function upsertLocalRecord(record, isDraft = false, showAlert = true) {
             const records = loadLocalRecords();
@@ -1362,7 +1368,7 @@
                 badge.textContent = '狀態：離線備份模式';
                 badge.className = 'text-[11px] font-bold px-2 py-[2px] rounded bg-amber-100 text-amber-800 border border-amber-300';
                 hint.textContent = `雲端同步時間：${timeText}${note ? `（${note}）` : ''}`;
-                showSetupHint('請在環境變數或部署設定中注入 __firebase_config（apiKey、authDomain、projectId 等）並啟用 Firebase Email/Password 或匿名登入，或提供 __initial_auth_token。');
+                showSetupHint(formatSetupHint(note));
             }
         }
 
