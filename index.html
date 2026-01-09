@@ -633,7 +633,7 @@
     <!-- Standard Script Block -->
     <script>
         // Versioning
-        const APP_VERSION = 'v1.1.6';
+        const APP_VERSION = 'v1.1.7';
 
         // Global State
         window.allRecords = []; 
@@ -649,8 +649,10 @@
         window.currentDraftId = null;
         const AUTH_USERS_KEY = 'rs_auth_users';
         const AUTH_CURRENT_USER_KEY = 'rs_auth_current_user';
+        const AUTH_LAST_EMAIL_KEY = 'rs_auth_last_email';
         window.firebaseAuthApi = window.firebaseAuthApi || { enabled: false };
         window.firebaseAuthState = window.firebaseAuthState || { email: '', isAnonymous: false };
+        window.firebaseAuthStateResolved = window.firebaseAuthStateResolved || false;
         const TEST_MODE = Boolean(window.__test_mode);
         const TEST_USER_EMAIL = typeof window.__test_user_email === 'string'
             ? window.__test_user_email.trim()
@@ -683,6 +685,18 @@
             localStorage.removeItem(AUTH_CURRENT_USER_KEY);
         }
 
+        function getCachedAuthEmail() {
+            return localStorage.getItem(AUTH_LAST_EMAIL_KEY) || '';
+        }
+
+        function setCachedAuthEmail(email) {
+            if (email) {
+                localStorage.setItem(AUTH_LAST_EMAIL_KEY, email);
+            } else {
+                localStorage.removeItem(AUTH_LAST_EMAIL_KEY);
+            }
+        }
+
         function applyTestModeAuth() {
             if (!TEST_MODE) return;
             if (!TEST_USER_EMAIL) {
@@ -690,6 +704,8 @@
                 return;
             }
             setCurrentUserEmail(TEST_USER_EMAIL);
+            setCachedAuthEmail(TEST_USER_EMAIL);
+            window.firebaseAuthStateResolved = true;
             window.firebaseAuthState = { email: TEST_USER_EMAIL, isAnonymous: true };
         }
 
@@ -774,15 +790,31 @@
         }
 
         function updateAuthUI() {
-            const email = getAuthEmail();
             const authScreen = document.getElementById('auth-screen');
             const appMain = document.getElementById('app-main');
             const appShell = document.getElementById('app-shell');
             const controls = document.getElementById('auth-user-controls');
             const label = document.getElementById('auth-user-label');
             const avatar = document.getElementById('auth-user-avatar');
+            const isFirebaseEnabled = isFirebaseAuthEnabled();
+            const isResolved = !isFirebaseEnabled || window.firebaseAuthStateResolved;
+            let email = getAuthEmail();
+
+            if (!email && isFirebaseEnabled && !isResolved) {
+                email = getCachedAuthEmail();
+            }
+
             const isLoggedIn = Boolean(email);
             const displayName = getAuthDisplayName(email);
+
+            if (!isResolved && isFirebaseEnabled && !email) {
+                if (authScreen) authScreen.classList.add('hidden');
+                if (appMain) appMain.classList.add('hidden');
+                if (appShell) appShell.classList.add('hidden');
+                if (controls) controls.classList.add('hidden');
+                document.body.classList.add('overflow-hidden');
+                return;
+            }
 
             if (authScreen) authScreen.classList.toggle('hidden', isLoggedIn);
             if (appMain) appMain.classList.toggle('hidden', !isLoggedIn);
@@ -864,6 +896,7 @@
                 return;
             }
             setCurrentUserEmail(email);
+            setCachedAuthEmail(email);
             updateAuthUI();
         };
 
@@ -911,6 +944,7 @@
             users.push({ email, password });
             saveStoredUsers(users);
             setCurrentUserEmail(email);
+            setCachedAuthEmail(email);
             updateAuthUI();
             if (emailInput) emailInput.value = '';
             if (passwordInput) passwordInput.value = '';
@@ -951,16 +985,19 @@
                 }
             } else {
                 clearCurrentUserEmail();
+                setCachedAuthEmail('');
             }
             updateAuthUI();
             switchAuthTab('login');
         };
 
         window.handleFirebaseAuthState = (user) => {
+            window.firebaseAuthStateResolved = true;
             window.firebaseAuthState = {
                 email: user?.email || '',
                 isAnonymous: Boolean(user?.isAnonymous)
             };
+            setCachedAuthEmail(user?.email || '');
             updateAuthUI();
         };
 

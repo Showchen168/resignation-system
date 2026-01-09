@@ -1,5 +1,9 @@
 const { test, expect } = require('@playwright/test');
 
+const shouldRunE2E = process.env.PLAYWRIGHT_E2E === 'true';
+
+test.skip(!shouldRunE2E, '需要設定 PLAYWRIGHT_E2E=true 才會執行 E2E 測試');
+
 test('測試模式可顯示登入後畫面', async ({ page }) => {
   const testEmail = process.env.TEST_USER_EMAIL;
   expect(testEmail, '請設定 TEST_USER_EMAIL 環境變數以完成登入測試。').toBeTruthy();
