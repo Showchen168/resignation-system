@@ -1,0 +1,31 @@
+name: CI
+
+on:
+  push:
+  pull_request:
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: 設定 Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+      - name: 設定 Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '18'
+      - name: 安裝 Node 依賴
+        run: npm install
+      - name: 安裝 Playwright 瀏覽器
+        run: npx playwright install --with-deps
+      - name: 執行 pytest
+        run: python -m pytest
+      - name: 執行 npm test
+        run: npm test
+      - name: 執行 Playwright
+        run: npm run test:e2e
+        env:
+          TEST_USER_EMAIL: test-user@example.com
