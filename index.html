@@ -122,6 +122,7 @@
                 </div>
                 <p id="auth-login-error" class="text-xs text-red-600 hidden"></p>
                 <button onclick="loginWithEmail()" class="w-full btn-primary">登入</button>
+                <button type="button" onclick="toggleResetForm(true)" class="w-full btn-outline text-xs">忘記密碼？</button>
             </div>
             <div id="auth-register-form" class="space-y-4 hidden">
                 <div>
@@ -138,6 +139,16 @@
                 </div>
                 <p id="auth-register-error" class="text-xs text-red-600 hidden"></p>
                 <button onclick="registerWithEmail()" class="w-full btn-primary">建立帳號並登入</button>
+            </div>
+            <div id="auth-reset-form" class="space-y-4 hidden">
+                <div>
+                    <label class="block text-xs font-bold text-gray-500 mb-1">重設郵箱</label>
+                    <input type="email" id="auth-reset-email" class="input-field" placeholder="name@example.com">
+                </div>
+                <p id="auth-reset-error" class="text-xs text-red-600 hidden"></p>
+                <p id="auth-reset-success" class="text-xs text-green-600 hidden"></p>
+                <button onclick="sendPasswordReset()" class="w-full btn-primary">寄送重設郵件</button>
+                <button type="button" onclick="toggleResetForm(false)" class="w-full btn-outline">返回登入</button>
             </div>
         </div>
     </div>
@@ -584,7 +595,7 @@
     <!-- Standard Script Block -->
     <script>
         // Versioning
-        const APP_VERSION = 'v1.0.32';
+        const APP_VERSION = 'v1.0.33';
 
         // Global State
         window.allRecords = []; 
@@ -600,6 +611,8 @@
         window.currentDraftId = null;
         const AUTH_USERS_KEY = 'rs_auth_users';
         const AUTH_CURRENT_USER_KEY = 'rs_auth_current_user';
+        window.firebaseAuthApi = window.firebaseAuthApi || { enabled: false };
+        window.firebaseAuthState = window.firebaseAuthState || { email: '', isAnonymous: false };
 
         function getStoredUsers() {
             try {
@@ -640,12 +653,56 @@
             }
         }
 
+        function setAuthNotice(targetId, message) {
+            const el = document.getElementById(targetId);
+            if (!el) return;
+            if (message) {
+                el.textContent = message;
+                el.classList.remove('hidden');
+            } else {
+                el.textContent = '';
+                el.classList.add('hidden');
+            }
+        }
+
         function isValidEmail(value) {
             return /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(value);
         }
 
+        function isFirebaseAuthEnabled() {
+            return Boolean(window.firebaseAuthApi && window.firebaseAuthApi.enabled);
+        }
+
+        function getAuthEmail() {
+            if (isFirebaseAuthEnabled()) {
+                return window.firebaseAuthState?.email || '';
+            }
+            return getCurrentUserEmail();
+        }
+
+        function mapFirebaseAuthError(error) {
+            const code = error?.code || '';
+            switch (code) {
+                case 'auth/invalid-email':
+                    return '郵箱格式不正確。';
+                case 'auth/user-not-found':
+                    return '找不到此郵箱帳號。';
+                case 'auth/wrong-password':
+                case 'auth/invalid-credential':
+                    return '帳號或密碼錯誤，請重新輸入。';
+                case 'auth/email-already-in-use':
+                    return '此郵箱已註冊，請直接登入。';
+                case 'auth/weak-password':
+                    return '密碼強度不足，請至少輸入 6 碼。';
+                case 'auth/too-many-requests':
+                    return '嘗試次數過多，請稍後再試。';
+                default:
+                    return '系統連線異常，請稍後再試。';
+            }
+        }
+
         function updateAuthUI() {
-            const email = getCurrentUserEmail();
+            const email = getAuthEmail();
             const authScreen = document.getElementById('auth-screen');
             const appMain = document.getElementById('app-main');
             const controls = document.getElementById('auth-user-controls');
@@ -662,12 +719,14 @@
         window.switchAuthTab = (tab) => {
             const loginForm = document.getElementById('auth-login-form');
             const registerForm = document.getElementById('auth-register-form');
+            const resetForm = document.getElementById('auth-reset-form');
             const loginTab = document.getElementById('auth-tab-login');
             const registerTab = document.getElementById('auth-tab-register');
             if (!loginForm || !registerForm || !loginTab || !registerTab) return;
             const isLogin = tab === 'login';
             loginForm.classList.toggle('hidden', !isLogin);
             registerForm.classList.toggle('hidden', isLogin);
+            if (resetForm) resetForm.classList.add('hidden');
             loginTab.classList.toggle('bg-blue-600', isLogin);
             loginTab.classList.toggle('text-white', isLogin);
             loginTab.classList.toggle('bg-gray-100', !isLogin);
@@ -678,9 +737,30 @@
             registerTab.classList.toggle('text-gray-600', isLogin);
             setAuthError('auth-login-error', '');
             setAuthError('auth-register-error', '');
+            setAuthError('auth-reset-error', '');
+            setAuthNotice('auth-reset-success', '');
         };
 
-        window.loginWithEmail = () => {
+        window.toggleResetForm = (showReset) => {
+            const loginForm = document.getElementById('auth-login-form');
+            const registerForm = document.getElementById('auth-register-form');
+            const resetForm = document.getElementById('auth-reset-form');
+            if (!loginForm || !registerForm || !resetForm) return;
+            if (showReset) {
+                loginForm.classList.add('hidden');
+                registerForm.classList.add('hidden');
+                resetForm.classList.remove('hidden');
+            } else {
+                resetForm.classList.add('hidden');
+                switchAuthTab('login');
+            }
+            setAuthError('auth-login-error', '');
+            setAuthError('auth-register-error', '');
+            setAuthError('auth-reset-error', '');
+            setAuthNotice('auth-reset-success', '');
+        };
+
+        window.loginWithEmail = async () => {
             const emailInput = document.getElementById('auth-login-email');
             const passwordInput = document.getElementById('auth-login-password');
             const email = emailInput?.value.trim().toLowerCase();
@@ -688,6 +768,16 @@
             setAuthError('auth-login-error', '');
             if (!email || !password) {
                 setAuthError('auth-login-error', '請輸入郵箱與密碼。');
+                return;
+            }
+            if (isFirebaseAuthEnabled()) {
+                try {
+                    await window.firebaseAuthApi.signIn(email, password);
+                    if (passwordInput) passwordInput.value = '';
+                    toggleResetForm(false);
+                } catch (error) {
+                    setAuthError('auth-login-error', mapFirebaseAuthError(error));
+                }
                 return;
             }
             const users = getStoredUsers();
@@ -700,7 +790,7 @@
             updateAuthUI();
         };
 
-        window.registerWithEmail = () => {
+        window.registerWithEmail = async () => {
             const emailInput = document.getElementById('auth-register-email');
             const passwordInput = document.getElementById('auth-register-password');
             const confirmInput = document.getElementById('auth-register-confirm');
@@ -724,6 +814,18 @@
                 setAuthError('auth-register-error', '兩次輸入的密碼不一致。');
                 return;
             }
+            if (isFirebaseAuthEnabled()) {
+                try {
+                    await window.firebaseAuthApi.register(email, password);
+                    if (emailInput) emailInput.value = '';
+                    if (passwordInput) passwordInput.value = '';
+                    if (confirmInput) confirmInput.value = '';
+                    switchAuthTab('login');
+                } catch (error) {
+                    setAuthError('auth-register-error', mapFirebaseAuthError(error));
+                }
+                return;
+            }
             const users = getStoredUsers();
             if (users.some(user => user.email === email)) {
                 setAuthError('auth-register-error', '此郵箱已註冊，請直接登入。');
@@ -738,10 +840,51 @@
             if (confirmInput) confirmInput.value = '';
         };
 
-        window.logoutUser = () => {
-            clearCurrentUserEmail();
+        window.sendPasswordReset = async () => {
+            const emailInput = document.getElementById('auth-reset-email');
+            const email = emailInput?.value.trim().toLowerCase();
+            setAuthError('auth-reset-error', '');
+            setAuthNotice('auth-reset-success', '');
+            if (!email) {
+                setAuthError('auth-reset-error', '請輸入郵箱。');
+                return;
+            }
+            if (!isValidEmail(email)) {
+                setAuthError('auth-reset-error', '郵箱格式不正確。');
+                return;
+            }
+            if (!isFirebaseAuthEnabled()) {
+                setAuthError('auth-reset-error', '目前未連線 Firebase，無法重設密碼。');
+                return;
+            }
+            try {
+                await window.firebaseAuthApi.sendPasswordReset(email);
+                setAuthNotice('auth-reset-success', '已寄送重設密碼郵件，請檢查信箱。');
+            } catch (error) {
+                setAuthError('auth-reset-error', mapFirebaseAuthError(error));
+            }
+        };
+
+        window.logoutUser = async () => {
+            if (isFirebaseAuthEnabled()) {
+                try {
+                    await window.firebaseAuthApi.signOut();
+                } catch (error) {
+                    console.error('Firebase 登出失敗', error);
+                }
+            } else {
+                clearCurrentUserEmail();
+            }
             updateAuthUI();
             switchAuthTab('login');
+        };
+
+        window.handleFirebaseAuthState = (user) => {
+            window.firebaseAuthState = {
+                email: user?.email || '',
+                isAnonymous: Boolean(user?.isAnonymous)
+            };
+            updateAuthUI();
         };
 
         function isPlaceholderFirebaseConfig(cfg) {
@@ -1119,7 +1262,7 @@
             setAllRecords(fallback);
             if(reason) console.warn(`已切換離線備份模式：${reason}`);
             updateConnectionBadge(false, reason);
-            showSetupHint(`${reason ? `${reason}。` : ''}若要啟用雲端同步，請在 Firebase 專案啟用匿名登入（或提供自訂權杖 __initial_auth_token），並將 __firebase_config（apiKey、authDomain、projectId、storageBucket、messagingSenderId、appId）注入前端。`);
+            showSetupHint(`${reason ? `${reason}。` : ''}若要啟用雲端同步，請在 Firebase 專案啟用 Email/Password 或匿名登入（或提供自訂權杖 __initial_auth_token），並將 __firebase_config（apiKey、authDomain、projectId、storageBucket、messagingSenderId、appId）注入前端。`);
         }
         function upsertLocalRecord(record, isDraft = false, showAlert = true) {
             const records = loadLocalRecords();
@@ -1155,7 +1298,7 @@
                 badge.textContent = '狀態：離線備份模式';
                 badge.className = 'text-[11px] font-bold px-2 py-[2px] rounded bg-amber-100 text-amber-800 border border-amber-300';
                 hint.textContent = `雲端同步時間：${timeText}${note ? `（${note}）` : ''}`;
-                showSetupHint('請在環境變數或部署設定中注入 __firebase_config（apiKey、authDomain、projectId 等）並啟用 Firebase 匿名登入或提供 __initial_auth_token。');
+                showSetupHint('請在環境變數或部署設定中注入 __firebase_config（apiKey、authDomain、projectId 等）並啟用 Firebase Email/Password 或匿名登入，或提供 __initial_auth_token。');
             }
         }
 
@@ -1237,7 +1380,7 @@
             if (versionTag) versionTag.textContent = APP_VERSION;
             applyLanguagePreferences();
             updateAuthUI();
-            if (!getCurrentUserEmail()) {
+            if (!getAuthEmail()) {
                 switchAuthTab('login');
             }
             const localData = loadLocalRecords();
@@ -1892,7 +2035,7 @@
     <!-- Firebase Module -->
     <script type="module">
         import { initializeApp } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-app.js";
-        import { getAuth, signInAnonymously, onAuthStateChanged, signInWithCustomToken } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-auth.js";
+        import { getAuth, signInAnonymously, onAuthStateChanged, signInWithCustomToken, createUserWithEmailAndPassword, signInWithEmailAndPassword, sendPasswordResetEmail, signOut } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-auth.js";
         import { getFirestore, collection, addDoc, onSnapshot, doc, updateDoc, deleteDoc, query, orderBy, setDoc } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js";
 
         const firebaseConfig = {
@@ -1938,6 +2081,7 @@
                 }
             } catch (error) { 
                 console.error("Auth Failed", error); 
+                window.firebaseAuthApi = { enabled: false };
                 initializeLocalMode('Firebase 驗證失敗，改用離線備份');
             }
         }
@@ -1948,6 +2092,13 @@
                 app = initializeApp(finalConfig);
                 auth = getAuth(app);
                 db = getFirestore(app);
+                window.firebaseAuthApi = {
+                    enabled: true,
+                    signIn: (email, password) => signInWithEmailAndPassword(auth, email, password),
+                    register: (email, password) => createUserWithEmailAndPassword(auth, email, password),
+                    sendPasswordReset: (email) => sendPasswordResetEmail(auth, email),
+                    signOut: () => signOut(auth)
+                };
                 initAuth();
                 onAuthStateChanged(auth, (user) => {
                     if (user) {
@@ -1955,9 +2106,13 @@
                         subscribeToData();
                         updateConnectionBadge(true, '已登入，等待雲端同步');
                     }
+                    if (window.handleFirebaseAuthState) {
+                        window.handleFirebaseAuthState(user);
+                    }
                 });
             } catch (e) {
                 console.error('Firebase 初始化失敗，改用離線備份模式', e);
+                window.firebaseAuthApi = { enabled: false };
                 initializeLocalMode('Firebase 初始化失敗');
             }
         }
