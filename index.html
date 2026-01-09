@@ -101,7 +101,7 @@
                     <input type="password" id="auth-login-password" class="input-field" placeholder="請輸入密碼">
                 </div>
                 <p id="auth-login-error" class="text-xs text-red-600 hidden"></p>
-                <button onclick="loginWithEmail()" class="w-full btn-primary">登入</button>
+                <button onclick="loginWithEmail()" class="w-full btn-primary" data-testid="auth-login-submit">登入</button>
                 <button type="button" onclick="toggleResetForm(true)" class="w-full btn-outline text-xs">忘記密碼？</button>
             </div>
             <div id="auth-register-form" class="space-y-4 hidden">
@@ -633,7 +633,7 @@
     <!-- Standard Script Block -->
     <script>
         // Versioning
-        const APP_VERSION = 'v1.1.5';
+        const APP_VERSION = 'v1.1.6';
 
         // Global State
         window.allRecords = []; 
@@ -681,16 +681,6 @@
 
         function clearCurrentUserEmail() {
             localStorage.removeItem(AUTH_CURRENT_USER_KEY);
-        }
-
-        function applyTestModeAuth() {
-            if (!TEST_MODE) return;
-            if (!TEST_USER_EMAIL) {
-                console.warn('測試模式啟用，但未提供測試用登入郵箱。');
-                return;
-            }
-            setCurrentUserEmail(TEST_USER_EMAIL);
-            window.firebaseAuthState = { email: TEST_USER_EMAIL, isAnonymous: true };
         }
 
         function applyTestModeAuth() {
@@ -1421,6 +1411,16 @@
                 showSetupHint(formatSetupHint(note));
             }
         }
+        function updateConnectionBadgeAwaitingAuth(note = '') {
+            const badge = document.getElementById('connection-badge');
+            const hint = document.getElementById('sync-hint');
+            if (!badge || !hint) return;
+            const timeText = window.lastCloudSync ? new Date(window.lastCloudSync).toLocaleString() : '尚未同步';
+            badge.textContent = '狀態：等待登入';
+            badge.className = 'text-[11px] font-bold px-2 py-[2px] rounded bg-blue-100 text-blue-800 border border-blue-300';
+            hint.textContent = `雲端同步時間：${timeText}${note ? `（${note}）` : ''}`;
+            showSetupHint();
+        }
 
         // Flow Configuration
         const flowConfig = {
@@ -1508,7 +1508,13 @@
             if (localData.length) setAllRecords(localData);
             renderAnalyticsYearOptions();
             if (window.updateCharts) window.updateCharts();
-            updateConnectionBadge(!useLocalStorage);
+            if (useLocalStorage) {
+                updateConnectionBadge(false);
+            } else if (getAuthEmail()) {
+                updateConnectionBadge(true, '已登入');
+            } else {
+                updateConnectionBadgeAwaitingAuth('請登入後啟用雲端同步');
+            }
             initTabNavigation();
         });
 
@@ -2185,8 +2191,7 @@
             const detail = describeFirebaseError(error);
             console.error("Auth Failed", error);
             if (shouldSkipAuthFailureFallback(error)) {
-                updateConnectionBadge(false, detail ? `Firebase 驗證失敗：${detail}` : 'Firebase 驗證失敗');
-                showSetupHint(formatSetupHint(detail));
+                updateConnectionBadgeAwaitingAuth('請登入後啟用雲端同步');
                 return;
             }
             window.firebaseAuthApi = { enabled: false };
@@ -2226,6 +2231,9 @@
                         currentUser = user;
                         subscribeToData();
                         updateConnectionBadge(true, '已登入，等待雲端同步');
+                    } else {
+                        currentUser = null;
+                        updateConnectionBadgeAwaitingAuth('請登入後啟用雲端同步');
                     }
                     if (window.handleFirebaseAuthState) {
                         window.handleFirebaseAuthState(user);
