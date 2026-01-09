@@ -64,43 +64,16 @@
 </head>
 <body class="bg-gray-100 min-h-screen flex flex-col">
 
-    <!-- Header -->
-    <header class="bg-white shadow border-b border-gray-200 sticky top-0 z-50">
-        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-3 flex justify-between items-center">
-            <div class="flex items-center space-x-3">
-                <span class="text-2xl">☁️</span>
-                <div class="flex flex-col">
-                    <h1 class="text-lg font-bold text-gray-800 leading-tight">研發離職面談與留才評估管理系統</h1>
-                    <span class="text-xs text-green-600 font-bold flex items-center">
-                        <span class="w-2 h-2 bg-green-500 rounded-full mr-1 animate-pulse"></span> 
-                        Github Deployment Version
-                    </span>
-                    <span class="text-xs text-gray-500 font-medium">版本：<span id="app-version-tag">載入中</span></span>
-                    <div class="flex items-center gap-2 mt-1">
-                        <span id="connection-badge" class="text-[11px] font-bold px-2 py-[2px] rounded bg-yellow-100 text-yellow-800 border border-yellow-300">狀態：檢查中</span>
-                        <span id="sync-hint" class="text-[11px] text-gray-500">雲端同步時間：尚未同步</span>
-                        <span id="setup-hint" class="text-[11px] text-amber-700 hidden">若要啟用雲端同步，請設定 Firebase 連線參數</span>
-                    </div>
-                </div>
-            </div>
-            <div class="flex items-center space-x-4">
-                <nav class="hidden md:flex space-x-4 text-sm font-medium text-gray-600 items-center">
-                    <button type="button" class="hover:text-blue-700 transition-colors whitespace-nowrap tab-link" data-tab="case-processing" data-testid="top-nav-case-processing">案件處理</button>
-                    <button type="button" class="hover:text-blue-700 transition-colors whitespace-nowrap tab-link" data-tab="records" data-testid="top-nav-records">歷史紀錄</button>
-                    <button type="button" class="hover:text-blue-700 transition-colors whitespace-nowrap tab-link" data-tab="analytics" data-testid="top-nav-analytics">數據看板</button>
-                    <button type="button" class="hover:text-blue-700 transition-colors whitespace-nowrap tab-link" data-tab="process-map" data-testid="top-nav-process-map">標準SOP</button>
-                    <button type="button" id="admin-nav-link" class="hover:text-blue-700 transition-colors whitespace-nowrap tab-link" data-tab="admin-panel" data-testid="top-nav-admin-panel">面談紀錄總覽</button>
-                    <button onclick="toggleLanguage()" class="border border-blue-300 text-blue-600 hover:bg-blue-50 px-3 py-1 rounded transition-colors flex items-center whitespace-nowrap">
-                        <span class="text-xs mr-1">🌐</span> <span id="lang-btn-text">繁/简</span>
-                    </button>
-                </nav>
-                <div id="auth-user-controls" class="hidden items-center space-x-2 text-xs sm:text-sm">
-                    <span class="text-gray-600 font-medium">登入中：<span id="auth-user-label"></span></span>
-                    <button onclick="logoutUser()" class="border border-gray-300 text-gray-600 hover:bg-gray-50 px-3 py-1 rounded transition-colors">登出</button>
-                </div>
-            </div>
-        </div>
-    </header>
+    <!-- Top Navigation (hidden, for structural parity) -->
+    <div class="hidden" aria-hidden="true">
+        <nav class="space-x-4 text-sm font-medium text-gray-600 items-center">
+            <button type="button" class="tab-link" data-tab="case-processing" data-testid="top-nav-case-processing">案件處理</button>
+            <button type="button" class="tab-link" data-tab="records" data-testid="top-nav-records">歷史紀錄</button>
+            <button type="button" class="tab-link" data-tab="analytics" data-testid="top-nav-analytics">數據看板</button>
+            <button type="button" class="tab-link" data-tab="process-map" data-testid="top-nav-process-map">標準SOP</button>
+            <button type="button" id="admin-nav-link" class="tab-link" data-tab="admin-panel" data-testid="top-nav-admin-panel">面談紀錄總覽</button>
+        </nav>
+    </div>
 
     <div id="auth-screen" class="fixed inset-0 z-[200] flex items-center justify-center bg-gray-900/60 p-4 hidden">
         <div class="w-full max-w-md rounded-2xl bg-white p-6 shadow-2xl border border-gray-200">
@@ -157,9 +130,25 @@
 
     <div id="app-shell" class="flex flex-1 min-h-0">
         <aside class="hidden lg:flex flex-col w-64 bg-slate-900 text-slate-100 px-4 py-6">
-            <div class="mb-6">
-                <div class="text-lg font-bold mb-1">工作紀錄中心</div>
+            <div class="mb-6 space-y-1">
+                <div class="text-lg font-bold">研發離職管理系統</div>
+                <div class="text-xs text-slate-400">System Builder: Show</div>
                 <div class="text-xs text-slate-400">Firebase 雲端同步版</div>
+                <div class="mt-3 space-y-2 text-xs text-slate-300">
+                    <div class="flex items-center gap-2">
+                        <span id="connection-badge" class="text-[11px] font-bold px-2 py-[2px] rounded bg-yellow-100 text-yellow-800 border border-yellow-300">狀態：檢查中</span>
+                    </div>
+                    <div id="sync-hint" class="text-[11px] text-slate-400">雲端同步時間：尚未同步</div>
+                    <div id="setup-hint" class="text-[11px] text-amber-300 hidden">若要啟用雲端同步，請設定 Firebase 連線參數</div>
+                    <div class="text-[11px] text-slate-400 font-medium">版本：<span id="app-version-tag">載入中</span></div>
+                    <button onclick="toggleLanguage()" class="w-full border border-slate-600 text-slate-200 hover:bg-slate-800 px-3 py-1 rounded transition-colors flex items-center justify-center whitespace-nowrap">
+                        <span class="text-xs mr-1">🌐</span> <span id="lang-btn-text">繁/简</span>
+                    </button>
+                    <div id="auth-user-controls" class="hidden flex-col gap-2 text-[11px] text-slate-200">
+                        <span class="font-medium">登入中：<span id="auth-user-label"></span></span>
+                        <button onclick="logoutUser()" class="border border-slate-600 text-slate-200 hover:bg-slate-800 px-3 py-1 rounded transition-colors">登出</button>
+                    </div>
+                </div>
             </div>
             <div class="space-y-2">
                 <button type="button" class="tab-link w-full active" data-tab="case-processing" data-testid="side-nav-case-processing">案件處理</button>
@@ -613,7 +602,7 @@
     <!-- Standard Script Block -->
     <script>
         // Versioning
-        const APP_VERSION = 'v1.1.0';
+        const APP_VERSION = 'v1.1.2';
 
         // Global State
         window.allRecords = []; 
@@ -631,6 +620,10 @@
         const AUTH_CURRENT_USER_KEY = 'rs_auth_current_user';
         window.firebaseAuthApi = window.firebaseAuthApi || { enabled: false };
         window.firebaseAuthState = window.firebaseAuthState || { email: '', isAnonymous: false };
+        const TEST_MODE = Boolean(window.__test_mode);
+        const TEST_USER_EMAIL = typeof window.__test_user_email === 'string'
+            ? window.__test_user_email.trim()
+            : '';
 
         function getStoredUsers() {
             try {
@@ -657,6 +650,16 @@
 
         function clearCurrentUserEmail() {
             localStorage.removeItem(AUTH_CURRENT_USER_KEY);
+        }
+
+        function applyTestModeAuth() {
+            if (!TEST_MODE) return;
+            if (!TEST_USER_EMAIL) {
+                console.warn('測試模式啟用，但未提供測試用登入郵箱。');
+                return;
+            }
+            setCurrentUserEmail(TEST_USER_EMAIL);
+            window.firebaseAuthState = { email: TEST_USER_EMAIL, isAnonymous: true };
         }
 
         function setAuthError(targetId, message) {
@@ -723,6 +726,7 @@
             const code = error?.code || '';
             const messageMap = {
                 'auth/operation-not-allowed': '尚未啟用匿名或 Email/Password 登入',
+                'auth/admin-restricted-operation': '尚未啟用匿名或 Email/Password 登入',
                 'auth/configuration-not-found': '找不到 Firebase Auth 設定',
                 'auth/invalid-api-key': 'apiKey 無效',
                 'auth/invalid-custom-token': '自訂權杖無效',
@@ -1316,13 +1320,19 @@
             el.classList.remove('hidden');
         }
 
+        function formatSetupHint(reason = '') {
+            const guidance = '若要啟用雲端同步，請在 Firebase 專案啟用 Email/Password 或匿名登入（或提供自訂權杖 __initial_auth_token），並將 __firebase_config（apiKey、authDomain、projectId、storageBucket、messagingSenderId、appId）注入前端。';
+            if (!reason) return guidance;
+            return `${reason}。${guidance}`;
+        }
+
         function initializeLocalMode(reason = '') {
             useLocalStorage = true;
             const fallback = loadLocalRecords();
             setAllRecords(fallback);
             if(reason) console.warn(`已切換離線備份模式：${reason}`);
             updateConnectionBadge(false, reason);
-            showSetupHint(`${reason ? `${reason}。` : ''}若要啟用雲端同步，請在 Firebase 專案啟用 Email/Password 或匿名登入（或提供自訂權杖 __initial_auth_token），並將 __firebase_config（apiKey、authDomain、projectId、storageBucket、messagingSenderId、appId）注入前端。`);
+            showSetupHint(formatSetupHint(reason));
         }
         function upsertLocalRecord(record, isDraft = false, showAlert = true) {
             const records = loadLocalRecords();
@@ -1358,7 +1368,7 @@
                 badge.textContent = '狀態：離線備份模式';
                 badge.className = 'text-[11px] font-bold px-2 py-[2px] rounded bg-amber-100 text-amber-800 border border-amber-300';
                 hint.textContent = `雲端同步時間：${timeText}${note ? `（${note}）` : ''}`;
-                showSetupHint('請在環境變數或部署設定中注入 __firebase_config（apiKey、authDomain、projectId 等）並啟用 Firebase Email/Password 或匿名登入，或提供 __initial_auth_token。');
+                showSetupHint(formatSetupHint(note));
             }
         }
 
@@ -1439,6 +1449,7 @@
             const versionTag = document.getElementById('app-version-tag');
             if (versionTag) versionTag.textContent = APP_VERSION;
             applyLanguagePreferences();
+            applyTestModeAuth();
             updateAuthUI();
             if (!getAuthEmail()) {
                 switchAuthTab('login');
@@ -2085,9 +2096,10 @@
   apiKey: "AIzaSyAGPH6HKTi8yikT9rG_VhoivwWycM5LO6Y",
   authDomain: "resignation-system.firebaseapp.com",
   projectId: "resignation-system",
-  storageBucket: "resignation-system.firebasestorage.app", // 注意：圖片中的網域可能有變，請以複製的文字為準
+  storageBucket: "resignation-system.firebasestorage.app",
   messagingSenderId: "20779725950",
-  appId: "1:20779725950:web:12a2d3b753d5cf3bc0d42f"
+  appId: "1:20779725950:web:12a2d3b753d5cf3bc0d42f",
+  measurementId: "G-EH2FBKQTKD"
 };
         // 為了在沒有變數的情況下不報錯，這裡做一個防呆
         // 實際部署時請務必填寫上方 config
@@ -2161,7 +2173,17 @@
                 initializeLocalMode(detail ? `Firebase 初始化失敗：${detail}` : 'Firebase 初始化失敗');
             }
         }
-        bootstrapFirebase();
+        if (window.__test_mode) {
+            initializeLocalMode('測試模式啟用，略過 Firebase 初始化');
+            if (window.handleFirebaseAuthState) {
+                window.handleFirebaseAuthState({
+                    email: window.__test_user_email || '',
+                    isAnonymous: true
+                });
+            }
+        } else {
+            bootstrapFirebase();
+        }
 
         function subscribeToData() {
             if (!currentUser || useLocalStorage) return;
