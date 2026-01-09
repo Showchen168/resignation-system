@@ -633,7 +633,7 @@
     <!-- Standard Script Block -->
     <script>
         // Versioning
-        const APP_VERSION = 'v1.1.7';
+        const APP_VERSION = 'v1.1.8';
 
         // Global State
         window.allRecords = []; 
@@ -1459,6 +1459,17 @@
             showSetupHint();
         }
 
+        function updateConnectionBadgeVerifying(note = '') {
+            const badge = document.getElementById('connection-badge');
+            const hint = document.getElementById('sync-hint');
+            if (!badge || !hint) return;
+            const timeText = window.lastCloudSync ? new Date(window.lastCloudSync).toLocaleString() : '尚未同步';
+            badge.textContent = '狀態：驗證登入中';
+            badge.className = 'text-[11px] font-bold px-2 py-[2px] rounded bg-blue-100 text-blue-800 border border-blue-300';
+            hint.textContent = `雲端同步時間：${timeText}${note ? `（${note}）` : ''}`;
+            showSetupHint();
+        }
+
         // Flow Configuration
         const flowConfig = {
             start: { title: '建立新離職案件', desc: '請輸入離職人員資訊以啟動評估流程。', icon: '📂', requireNote: false, visualStep: 0 },
@@ -1549,6 +1560,8 @@
                 updateConnectionBadge(false);
             } else if (getAuthEmail()) {
                 updateConnectionBadge(true, '已登入');
+            } else if (getCachedAuthEmail() && isFirebaseAuthEnabled() && !window.firebaseAuthStateResolved) {
+                updateConnectionBadgeVerifying('驗證登入狀態中');
             } else {
                 updateConnectionBadgeAwaitingAuth('請登入後啟用雲端同步');
             }
@@ -2228,6 +2241,9 @@
             const detail = describeFirebaseError(error);
             console.error("Auth Failed", error);
             if (shouldSkipAuthFailureFallback(error)) {
+                window.firebaseAuthStateResolved = true;
+                setCachedAuthEmail('');
+                updateAuthUI();
                 updateConnectionBadgeAwaitingAuth('請登入後啟用雲端同步');
                 return;
             }
