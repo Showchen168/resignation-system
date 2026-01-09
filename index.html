@@ -137,7 +137,10 @@
         <aside class="hidden lg:flex flex-col w-64 bg-slate-900 text-slate-100 px-4 py-6">
             <div class="space-y-4">
                 <div>
-                    <div class="text-lg font-bold">研發離職管理系統</div>
+                    <div class="text-lg font-bold flex items-center gap-2">
+                        <span aria-hidden="true">🧭</span>
+                        <span>研發離職管理系統</span>
+                    </div>
                     <div class="text-xs text-slate-400">System Builder: Show</div>
                     <div class="text-xs text-slate-400">Firebase 雲端同步版</div>
                 </div>
@@ -172,22 +175,24 @@
                     <span>📋</span> 面談紀錄總覽
                 </button>
             </div>
-            <div class="mt-auto pt-6 space-y-3 border-t border-slate-800">
-                <div class="sidebar-section-title">使用者資訊</div>
-                <div id="auth-user-controls" class="hidden flex-col gap-3 text-[11px] text-slate-200">
-                    <div class="flex items-center gap-2">
-                        <div class="h-8 w-8 rounded-full bg-blue-600 flex items-center justify-center text-sm font-bold text-white">S</div>
-                        <div class="flex flex-col">
-                            <span class="font-semibold text-xs text-slate-100">登入中</span>
-                            <span id="auth-user-label" class="text-[11px] text-slate-300"></span>
-                        </div>
-                    </div>
-                    <button onclick="logoutUser()" class="border border-slate-600 text-slate-200 hover:bg-slate-800 px-3 py-1 rounded transition-colors">登出</button>
-                </div>
-            </div>
         </aside>
 
         <main id="app-main" class="flex-grow p-4 sm:p-8">
+            <div class="max-w-7xl mx-auto mb-4 flex justify-end">
+                <div class="bg-white border border-gray-200 rounded-lg shadow-sm px-4 py-2">
+                    <div class="text-[11px] font-semibold text-gray-500 mb-2">使用者資訊</div>
+                    <div id="auth-user-controls" class="hidden flex items-center gap-4 text-xs text-gray-700">
+                        <div class="flex items-center gap-2">
+                            <div class="h-8 w-8 rounded-full bg-blue-600 flex items-center justify-center text-sm font-bold text-white">S</div>
+                            <div class="flex flex-col">
+                                <span class="font-semibold text-xs text-gray-800">登入中</span>
+                                <span id="auth-user-label" class="text-[11px] text-gray-500"></span>
+                            </div>
+                        </div>
+                        <button onclick="logoutUser()" class="border border-gray-300 text-gray-600 hover:bg-gray-50 px-3 py-1 rounded transition-colors text-xs">登出</button>
+                    </div>
+                </div>
+            </div>
         
         <!-- Case Processing Section -->
         <section id="case-processing" class="tab-section hidden max-w-7xl mx-auto mb-12">
