@@ -1,6 +1,6 @@
 {
   "name": "resignation-system",
-  "version": "v1.1.3",
+  "version": "v1.1.5",
   "private": true,
   "scripts": {
     "test": "python -m pytest"
