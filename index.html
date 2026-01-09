@@ -2251,9 +2251,14 @@
             initializeLocalMode(detail ? `Firebase 驗證失敗：${detail}` : 'Firebase 驗證失敗');
         }
 
-        async function initAuth() {
+      async function initAuth() {
             if (useLocalStorage) return;
             if (auth?.currentUser) return;
+
+            // [修正] 若有快取郵箱，表示預期會自動恢復 Email 登入，
+            // 故跳過匿名登入嘗試，避免觸發 auth/operation-not-allowed 錯誤而清除狀態
+            if (getCachedAuthEmail()) return;
+
             try {
                 if (typeof __initial_auth_token !== 'undefined' && __initial_auth_token) {
                     await signInWithCustomToken(auth, __initial_auth_token);
