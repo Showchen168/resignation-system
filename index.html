@@ -56,6 +56,11 @@
         .draft-badge.hidden { display: none; }
         .tab-link { @apply flex items-center gap-2 px-4 py-2 rounded-lg text-sm font-medium text-gray-600 hover:bg-blue-50 hover:text-blue-700 transition-colors; }
         .tab-link.active { @apply bg-blue-600 text-white hover:bg-blue-600 hover:text-white; }
+        .tab-link--sidebar { @apply text-slate-200 hover:bg-slate-800/80 hover:text-white; }
+        .tab-link--sidebar.active { @apply bg-slate-800 text-white shadow-inner; }
+        .sidebar-section-title { @apply text-[11px] uppercase tracking-widest text-slate-500 font-semibold; }
+        .sidebar-card { @apply rounded-xl bg-slate-800/70 border border-slate-700/80 p-3; }
+        .sidebar-label { @apply text-[11px] text-slate-400; }
         
         /* Animations */
         .animate-flash { animation: flash 1s; }
@@ -130,32 +135,55 @@
 
     <div id="app-shell" class="flex flex-1 min-h-0">
         <aside class="hidden lg:flex flex-col w-64 bg-slate-900 text-slate-100 px-4 py-6">
-            <div class="mb-6 space-y-1">
-                <div class="text-lg font-bold">研發離職管理系統</div>
-                <div class="text-xs text-slate-400">System Builder: Show</div>
-                <div class="text-xs text-slate-400">Firebase 雲端同步版</div>
-                <div class="mt-3 space-y-2 text-xs text-slate-300">
+            <div class="space-y-4">
+                <div>
+                    <div class="text-lg font-bold">研發離職管理系統</div>
+                    <div class="text-xs text-slate-400">System Builder: Show</div>
+                    <div class="text-xs text-slate-400">Firebase 雲端同步版</div>
+                </div>
+                <div class="sidebar-card space-y-2">
+                    <div class="sidebar-section-title">系統狀態</div>
                     <div class="flex items-center gap-2">
                         <span id="connection-badge" class="text-[11px] font-bold px-2 py-[2px] rounded bg-yellow-100 text-yellow-800 border border-yellow-300">狀態：檢查中</span>
                     </div>
-                    <div id="sync-hint" class="text-[11px] text-slate-400">雲端同步時間：尚未同步</div>
+                    <div id="sync-hint" class="sidebar-label">雲端同步時間：尚未同步</div>
                     <div id="setup-hint" class="text-[11px] text-amber-300 hidden">若要啟用雲端同步，請設定 Firebase 連線參數</div>
-                    <div class="text-[11px] text-slate-400 font-medium">版本：<span id="app-version-tag">載入中</span></div>
-                    <button onclick="toggleLanguage()" class="w-full border border-slate-600 text-slate-200 hover:bg-slate-800 px-3 py-1 rounded transition-colors flex items-center justify-center whitespace-nowrap">
-                        <span class="text-xs mr-1">🌐</span> <span id="lang-btn-text">繁/简</span>
-                    </button>
-                    <div id="auth-user-controls" class="hidden flex-col gap-2 text-[11px] text-slate-200">
-                        <span class="font-medium">登入中：<span id="auth-user-label"></span></span>
-                        <button onclick="logoutUser()" class="border border-slate-600 text-slate-200 hover:bg-slate-800 px-3 py-1 rounded transition-colors">登出</button>
-                    </div>
+                    <div class="sidebar-label font-medium">版本：<span id="app-version-tag">載入中</span></div>
                 </div>
+                <button onclick="toggleLanguage()" class="w-full border border-slate-600 text-slate-200 hover:bg-slate-800 px-3 py-1 rounded transition-colors flex items-center justify-center whitespace-nowrap">
+                    <span class="text-xs mr-1">🌐</span> <span id="lang-btn-text">繁/简</span>
+                </button>
             </div>
-            <div class="space-y-2">
-                <button type="button" class="tab-link w-full active" data-tab="case-processing" data-testid="side-nav-case-processing">案件處理</button>
-                <button type="button" class="tab-link w-full" data-tab="records" data-testid="side-nav-records">歷史紀錄</button>
-                <button type="button" class="tab-link w-full" data-tab="analytics" data-testid="side-nav-analytics">數據看板</button>
-                <button type="button" class="tab-link w-full" data-tab="process-map" data-testid="side-nav-process-map">標準SOP</button>
-                <button type="button" class="tab-link w-full" data-tab="admin-panel" data-testid="side-nav-admin-panel">面談紀錄總覽</button>
+            <div class="mt-6 space-y-2 border-t border-slate-800 pt-4">
+                <div class="sidebar-section-title">功能導覽</div>
+                <button type="button" class="tab-link tab-link--sidebar w-full active" data-tab="case-processing" data-testid="side-nav-case-processing">
+                    <span>📁</span> 案件處理
+                </button>
+                <button type="button" class="tab-link tab-link--sidebar w-full" data-tab="records" data-testid="side-nav-records">
+                    <span>🕘</span> 歷史紀錄
+                </button>
+                <button type="button" class="tab-link tab-link--sidebar w-full" data-tab="analytics" data-testid="side-nav-analytics">
+                    <span>📊</span> 數據看板
+                </button>
+                <button type="button" class="tab-link tab-link--sidebar w-full" data-tab="process-map" data-testid="side-nav-process-map">
+                    <span>🗺️</span> 標準SOP
+                </button>
+                <button type="button" class="tab-link tab-link--sidebar w-full" data-tab="admin-panel" data-testid="side-nav-admin-panel">
+                    <span>📋</span> 面談紀錄總覽
+                </button>
+            </div>
+            <div class="mt-auto pt-6 space-y-3 border-t border-slate-800">
+                <div class="sidebar-section-title">使用者資訊</div>
+                <div id="auth-user-controls" class="hidden flex-col gap-3 text-[11px] text-slate-200">
+                    <div class="flex items-center gap-2">
+                        <div class="h-8 w-8 rounded-full bg-blue-600 flex items-center justify-center text-sm font-bold text-white">S</div>
+                        <div class="flex flex-col">
+                            <span class="font-semibold text-xs text-slate-100">登入中</span>
+                            <span id="auth-user-label" class="text-[11px] text-slate-300"></span>
+                        </div>
+                    </div>
+                    <button onclick="logoutUser()" class="border border-slate-600 text-slate-200 hover:bg-slate-800 px-3 py-1 rounded transition-colors">登出</button>
+                </div>
             </div>
         </aside>
 
