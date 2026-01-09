@@ -662,6 +662,16 @@
             window.firebaseAuthState = { email: TEST_USER_EMAIL, isAnonymous: true };
         }
 
+        function applyTestModeAuth() {
+            if (!TEST_MODE) return;
+            if (!TEST_USER_EMAIL) {
+                console.warn('測試模式啟用，但未提供測試用登入郵箱。');
+                return;
+            }
+            setCurrentUserEmail(TEST_USER_EMAIL);
+            window.firebaseAuthState = { email: TEST_USER_EMAIL, isAnonymous: true };
+        }
+
         function setAuthError(targetId, message) {
             const el = document.getElementById(targetId);
             if (!el) return;

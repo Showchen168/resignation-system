@@ -4,5 +4,8 @@
   "private": true,
   "scripts": {
     "test": "python -m pytest"
+  },
+  "devDependencies": {
+    "@playwright/test": "^1.44.0"
   }
 }
