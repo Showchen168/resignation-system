@@ -10,16 +10,14 @@ APP_VERSION = "v1.1.8"
 
 
 def validate_version(version: str) -> None:
-    """檢查版本字串格式與 PATCH 範圍。"""
+    """檢查版本字串格式（符合 SemVer 標準）。"""
     if not version.startswith("v"):
         raise ValueError("版本格式錯誤：缺少 v 前綴。")
     parts = version[1:].split(".")
     if len(parts) != 3 or not all(p.isdigit() for p in parts):
         raise ValueError("版本格式錯誤：需為 vMAJOR.MINOR.PATCH。")
     major, minor, patch = (int(p) for p in parts)
-    if patch < 0 or patch > 9:
-        raise ValueError("版本格式錯誤：PATCH 必須為 0-9。")
-    if major < 0 or minor < 0:
+    if major < 0 or minor < 0 or patch < 0:
         raise ValueError("版本格式錯誤：版號不得為負數。")
 
 

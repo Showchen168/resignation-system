@@ -998,6 +998,15 @@
             localStorage.setItem(AUTH_USERS_KEY, JSON.stringify(users));
         }
 
+        // 密碼雜湊函數（使用 Web Crypto API）
+        async function hashPassword(password) {
+            const encoder = new TextEncoder();
+            const data = encoder.encode(password);
+            const hashBuffer = await crypto.subtle.digest('SHA-256', data);
+            const hashArray = Array.from(new Uint8Array(hashBuffer));
+            return hashArray.map(b => b.toString(16).padStart(2, '0')).join('');
+        }
+
         function getCurrentUserEmail() {
             return localStorage.getItem(AUTH_CURRENT_USER_KEY);
         }
@@ -1215,7 +1224,8 @@
                 return;
             }
             const users = getStoredUsers();
-            const match = users.find(user => user.email === email && user.password === password);
+            const hashedPassword = await hashPassword(password);
+            const match = users.find(user => user.email === email && user.passwordHash === hashedPassword);
             if (!match) {
                 setAuthError('auth-login-error', '帳號或密碼錯誤，請重新輸入。');
                 return;
@@ -1266,7 +1276,8 @@
                 setAuthError('auth-register-error', '此郵箱已註冊，請直接登入。');
                 return;
             }
-            users.push({ email, password });
+            const passwordHash = await hashPassword(password);
+            users.push({ email, passwordHash });
             saveStoredUsers(users);
             setCurrentUserEmail(email);
             setCachedAuthEmail(email);
@@ -1351,17 +1362,6 @@
             const hash = location.hash.replace('#', '');
             const initialTab = TAB_IDS.includes(hash) ? hash : 'analytics';
             switchTab(initialTab);
-        }
-
-        function isPlaceholderFirebaseConfig(cfg) {
-            return !cfg.apiKey || cfg.apiKey.startsWith('YOUR_') || !cfg.projectId || cfg.projectId.includes('YOUR_PROJECT_ID');
-        }
-        function setAllRecords(newRecords) {
-            window.allRecords = (newRecords || []).sort((a, b) => new Date(b.date) - new Date(a.date));
-            if(window.renderRecordsTable) window.renderRecordsTable();
-            if(window.renderAdminTable) window.renderAdminTable();
-            renderAnalyticsYearOptions();
-            if(window.updateCharts) window.updateCharts();
         }
 
         function parseSalaryGrowth(value){
@@ -1653,16 +1653,6 @@
             renderSalaryGrowthChart(stats);
         };
 
-        function isPlaceholderFirebaseConfig(cfg) {
-            return !cfg.apiKey || cfg.apiKey.startsWith('YOUR_') || !cfg.projectId || cfg.projectId.includes('YOUR_PROJECT_ID');
-        }
-        function setAllRecords(newRecords) {
-            window.allRecords = (newRecords || []).sort((a, b) => new Date(b.date) - new Date(a.date));
-            if(window.renderRecordsTable) window.renderRecordsTable();
-            if(window.renderAdminTable) window.renderAdminTable();
-            if(window.updateCharts) window.updateCharts();
-        }
-
         // Google Drive (可透過 __google_drive_config 覆寫)
         const defaultGoogleDriveConfig = { 
             apiKey: 'YOUR_GOOGLE_API_KEY', 
@@ -1691,6 +1681,7 @@
             persistLocalRecords(window.allRecords);
             if(window.renderRecordsTable) window.renderRecordsTable();
             if(window.renderAdminTable) window.renderAdminTable();
+            renderAnalyticsYearOptions();
             if(window.updateCharts) window.updateCharts();
             if(window.updateDraftSelector) window.updateDraftSelector();
         }
@@ -2523,29 +2514,27 @@
         import { getAuth, signInAnonymously, onAuthStateChanged, signInWithCustomToken, createUserWithEmailAndPassword, signInWithEmailAndPassword, sendPasswordResetEmail, signOut } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-auth.js";
         import { getFirestore, collection, addDoc, onSnapshot, doc, updateDoc, deleteDoc, query, orderBy, setDoc } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js";
 
-        const firebaseConfig = {
-  apiKey: "AIzaSyAGPH6HKTi8yikT9rG_VhoivwWycM5LO6Y",
-  authDomain: "resignation-system.firebaseapp.com",
-  projectId: "resignation-system",
-  storageBucket: "resignation-system.firebasestorage.app",
-  messagingSenderId: "20779725950",
-  appId: "1:20779725950:web:12a2d3b753d5cf3bc0d42f",
-  measurementId: "G-EH2FBKQTKD"
-};
-        // 為了在沒有變數的情況下不報錯，這裡做一個防呆
-        // 實際部署時請務必填寫上方 config
-        
-        // 注意：GitHub Pages 部署時，以下這行必須修改
-        // const firebaseConfig = JSON.parse(__firebase_config); 
-        
-        // 在此環境下為了模擬，我們還是會嘗試讀取變數，但會加上 try-catch
-        let finalConfig = firebaseConfig;
+        // Firebase 配置：優先從環境變數 __firebase_config 讀取
+        // 部署時請透過 script 標籤注入：<script>window.__firebase_config = '{"apiKey":"...","projectId":"..."}';</script>
+        const defaultFirebaseConfig = {
+            apiKey: "YOUR_API_KEY",
+            authDomain: "YOUR_PROJECT_ID.firebaseapp.com",
+            projectId: "YOUR_PROJECT_ID",
+            storageBucket: "YOUR_PROJECT_ID.appspot.com",
+            messagingSenderId: "YOUR_MESSAGING_SENDER_ID",
+            appId: "YOUR_APP_ID"
+        };
+
+        let finalConfig = defaultFirebaseConfig;
         try {
-            if(typeof __firebase_config !== 'undefined') {
-                finalConfig = JSON.parse(__firebase_config);
+            if (typeof window.__firebase_config !== 'undefined' && window.__firebase_config) {
+                const injectedConfig = typeof window.__firebase_config === 'string'
+                    ? JSON.parse(window.__firebase_config)
+                    : window.__firebase_config;
+                finalConfig = { ...defaultFirebaseConfig, ...injectedConfig };
             }
         } catch(e) {
-            console.log("Using placeholder config");
+            console.warn("Firebase 配置解析失敗，使用預設值", e);
         }
 
         if (isPlaceholderFirebaseConfig(finalConfig)) {
