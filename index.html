@@ -9,30 +9,30 @@
     <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=Noto+Sans+TC:wght@300;400;500;700&family=Noto+Sans+SC:wght@300;400;500;700&display=swap" rel="stylesheet">
     <style type="text/tailwindcss">
-        /* ========== 精緻專業風格 - Premium Professional Theme ========== */
+        /* ========== 精緻專業風格 - Light Premium Theme ========== */
 
-        /* CSS Variables for Theme */
+        /* CSS Variables for Light Theme */
         :root {
-            --primary: #0ea5e9;
-            --primary-dark: #0284c7;
-            --primary-light: #38bdf8;
+            --primary: #0284c7;
+            --primary-dark: #0369a1;
+            --primary-light: #0ea5e9;
             --accent: #f59e0b;
             --accent-light: #fbbf24;
             --surface: #ffffff;
             --surface-elevated: #f8fafc;
-            --bg-main: #0f172a;
-            --bg-gradient-start: #1e293b;
-            --bg-gradient-end: #0f172a;
-            --text-primary: #f1f5f9;
-            --text-secondary: #94a3b8;
-            --border-subtle: rgba(148, 163, 184, 0.2);
-            --shadow-glow: 0 0 40px rgba(14, 165, 233, 0.15);
+            --bg-main: #f1f5f9;
+            --bg-card: #ffffff;
+            --text-primary: #1e293b;
+            --text-secondary: #64748b;
+            --text-muted: #94a3b8;
+            --border-color: #e2e8f0;
+            --border-light: #f1f5f9;
         }
 
         /* Base Typography */
         body {
             font-family: 'Inter', 'Noto Sans TC', 'Noto Sans SC', 'PingFang TC', 'Microsoft JhengHei', sans-serif;
-            background: linear-gradient(135deg, var(--bg-gradient-start) 0%, var(--bg-gradient-end) 100%);
+            background: linear-gradient(135deg, #f8fafc 0%, #f1f5f9 50%, #e2e8f0 100%);
             background-attachment: fixed;
             color: var(--text-primary);
             letter-spacing: -0.01em;
@@ -50,8 +50,8 @@
             width: 100%;
             height: 100%;
             background-image:
-                radial-gradient(ellipse at 20% 30%, rgba(14, 165, 233, 0.08) 0%, transparent 50%),
-                radial-gradient(ellipse at 80% 70%, rgba(245, 158, 11, 0.05) 0%, transparent 50%);
+                radial-gradient(ellipse at 20% 30%, rgba(14, 165, 233, 0.06) 0%, transparent 50%),
+                radial-gradient(ellipse at 80% 70%, rgba(245, 158, 11, 0.04) 0%, transparent 50%);
             pointer-events: none;
             z-index: 0;
         }
@@ -77,12 +77,11 @@
 
         /* History Components */
         .history-cell {
-            @apply bg-slate-800/50 border border-slate-700/50 rounded-xl p-4 text-sm leading-relaxed max-h-32 overflow-y-auto;
-            backdrop-filter: blur(8px);
+            @apply bg-slate-50 border border-slate-200 rounded-xl p-4 text-sm leading-relaxed max-h-32 overflow-y-auto;
         }
         .history-item { @apply mb-1; }
         .history-badge {
-            @apply inline-block text-xs font-semibold text-sky-300 bg-sky-900/50 border border-sky-700/50 rounded-lg px-2.5 py-1;
+            @apply inline-block text-xs font-semibold text-sky-700 bg-sky-50 border border-sky-200 rounded-lg px-2.5 py-1;
         }
         .modal-card { @apply max-h-[90vh] overflow-y-auto; }
 
@@ -90,12 +89,12 @@
         .btn-primary {
             @apply text-white px-5 py-2.5 rounded-xl font-semibold flex items-center justify-center;
             background: linear-gradient(135deg, var(--primary) 0%, var(--primary-dark) 100%);
-            box-shadow: 0 4px 14px rgba(14, 165, 233, 0.4), inset 0 1px 0 rgba(255,255,255,0.1);
+            box-shadow: 0 4px 14px rgba(2, 132, 199, 0.35);
             transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
         }
         .btn-primary:hover {
             transform: translateY(-2px);
-            box-shadow: 0 6px 20px rgba(14, 165, 233, 0.5), inset 0 1px 0 rgba(255,255,255,0.15);
+            box-shadow: 0 6px 20px rgba(2, 132, 199, 0.45);
         }
         .btn-primary:active {
             transform: translateY(0);
@@ -105,52 +104,49 @@
             @apply px-5 py-2.5 rounded-xl font-semibold flex items-center justify-center;
             background: linear-gradient(135deg, #fbbf24 0%, #f59e0b 100%);
             color: #78350f;
-            box-shadow: 0 4px 14px rgba(245, 158, 11, 0.3), inset 0 1px 0 rgba(255,255,255,0.2);
+            box-shadow: 0 4px 14px rgba(245, 158, 11, 0.3);
             transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
         }
         .btn-save:hover {
             transform: translateY(-2px);
-            box-shadow: 0 6px 20px rgba(245, 158, 11, 0.4), inset 0 1px 0 rgba(255,255,255,0.25);
+            box-shadow: 0 6px 20px rgba(245, 158, 11, 0.4);
         }
 
         .btn-outline {
-            @apply border-2 border-slate-600 text-slate-300 px-5 py-2.5 rounded-xl font-semibold flex items-center justify-center;
-            background: rgba(30, 41, 59, 0.5);
-            backdrop-filter: blur(8px);
+            @apply border-2 border-slate-300 text-slate-600 px-5 py-2.5 rounded-xl font-semibold flex items-center justify-center;
+            background: white;
             transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
         }
         .btn-outline:hover {
-            @apply border-sky-500 text-sky-400;
-            background: rgba(14, 165, 233, 0.1);
+            @apply border-sky-500 text-sky-600;
+            background: rgba(14, 165, 233, 0.05);
         }
 
         .btn-back {
-            @apply mt-2 w-full border border-transparent text-slate-500 hover:text-slate-300 px-4 py-1.5 rounded-lg text-xs font-medium flex items-center justify-center;
+            @apply mt-2 w-full border border-transparent text-slate-400 hover:text-slate-600 px-4 py-1.5 rounded-lg text-xs font-medium flex items-center justify-center;
             transition: all 0.2s ease;
         }
 
         /* ========== Premium Form Inputs ========== */
         .input-field {
-            @apply w-full rounded-xl px-4 py-3 text-slate-100 transition-all;
-            background: rgba(30, 41, 59, 0.6);
-            border: 1px solid rgba(148, 163, 184, 0.2);
-            backdrop-filter: blur(8px);
+            @apply w-full rounded-xl px-4 py-3 text-slate-700 transition-all;
+            background: white;
+            border: 1px solid var(--border-color);
         }
         .input-field:focus {
             @apply outline-none;
             border-color: var(--primary);
-            box-shadow: 0 0 0 3px rgba(14, 165, 233, 0.2), var(--shadow-glow);
+            box-shadow: 0 0 0 3px rgba(2, 132, 199, 0.15);
         }
         .input-field::placeholder {
-            @apply text-slate-500;
+            @apply text-slate-400;
         }
 
         .select-field {
-            @apply w-full rounded-xl px-4 py-3 text-slate-100 transition-all appearance-none;
-            background: rgba(30, 41, 59, 0.6);
-            border: 1px solid rgba(148, 163, 184, 0.2);
-            backdrop-filter: blur(8px);
-            background-image: url("data:image/svg+xml,%3csvg xmlns='http://www.w3.org/2000/svg' fill='none' viewBox='0 0 20 20'%3e%3cpath stroke='%2394a3b8' stroke-linecap='round' stroke-linejoin='round' stroke-width='1.5' d='M6 8l4 4 4-4'/%3e%3c/svg%3e");
+            @apply w-full rounded-xl px-4 py-3 text-slate-700 transition-all appearance-none;
+            background: white;
+            border: 1px solid var(--border-color);
+            background-image: url("data:image/svg+xml,%3csvg xmlns='http://www.w3.org/2000/svg' fill='none' viewBox='0 0 20 20'%3e%3cpath stroke='%2364748b' stroke-linecap='round' stroke-linejoin='round' stroke-width='1.5' d='M6 8l4 4 4-4'/%3e%3c/svg%3e");
             background-position: right 0.75rem center;
             background-repeat: no-repeat;
             background-size: 1.5em 1.5em;
@@ -158,55 +154,53 @@
         .select-field:focus {
             @apply outline-none;
             border-color: var(--primary);
-            box-shadow: 0 0 0 3px rgba(14, 165, 233, 0.2);
+            box-shadow: 0 0 0 3px rgba(2, 132, 199, 0.15);
         }
 
         .textarea-field {
-            @apply w-full rounded-xl px-4 py-3 text-slate-100 transition-all min-h-[100px];
-            background: rgba(30, 41, 59, 0.6);
-            border: 1px solid rgba(148, 163, 184, 0.2);
-            backdrop-filter: blur(8px);
+            @apply w-full rounded-xl px-4 py-3 text-slate-700 transition-all min-h-[100px];
+            background: white;
+            border: 1px solid var(--border-color);
         }
         .textarea-field:focus {
             @apply outline-none;
             border-color: var(--primary);
-            box-shadow: 0 0 0 3px rgba(14, 165, 233, 0.2);
+            box-shadow: 0 0 0 3px rgba(2, 132, 199, 0.15);
         }
 
         /* ========== Flowchart & Cards ========== */
         .tree { display: flex; justify-content: center; padding: 20px; }
         .tree ul { padding-top: 20px; position: relative; display: flex; justify-content: center; }
         .tree li { float: left; text-align: center; list-style-type: none; position: relative; padding: 20px 5px 0 5px; }
-        .tree li::before, .tree li::after { content: ''; position: absolute; top: 0; right: 50%; border-top: 2px solid rgba(14, 165, 233, 0.4); width: 50%; height: 20px; }
-        .tree li::after { right: auto; left: 50%; border-left: 2px solid rgba(14, 165, 233, 0.4); }
+        .tree li::before, .tree li::after { content: ''; position: absolute; top: 0; right: 50%; border-top: 2px solid rgba(2, 132, 199, 0.3); width: 50%; height: 20px; }
+        .tree li::after { right: auto; left: 50%; border-left: 2px solid rgba(2, 132, 199, 0.3); }
         .tree li:only-child::after, .tree li:only-child::before { display: none; }
         .tree li:only-child { padding-top: 0; }
         .tree li:first-child::before, .tree li:last-child::after { border: 0 none; }
-        .tree li:last-child::before { border-right: 2px solid rgba(14, 165, 233, 0.4); border-radius: 0 5px 0 0; }
+        .tree li:last-child::before { border-right: 2px solid rgba(2, 132, 199, 0.3); border-radius: 0 5px 0 0; }
         .tree li:first-child::after { border-radius: 5px 0 0 0; }
-        .tree ul ul::before { content: ''; position: absolute; top: 0; left: 50%; border-left: 2px solid rgba(14, 165, 233, 0.4); width: 0; height: 20px; }
+        .tree ul ul::before { content: ''; position: absolute; top: 0; left: 50%; border-left: 2px solid rgba(2, 132, 199, 0.3); width: 0; height: 20px; }
 
         .flow-card {
             @apply rounded-xl p-4 text-center relative z-10 text-sm font-medium inline-block min-w-[140px] max-w-[200px];
-            background: rgba(30, 41, 59, 0.8);
-            border: 1px solid rgba(148, 163, 184, 0.2);
+            background: white;
+            border: 1px solid var(--border-color);
             color: var(--text-primary);
-            backdrop-filter: blur(8px);
-            box-shadow: 0 4px 16px rgba(0, 0, 0, 0.2);
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.08);
             transition: all 0.3s ease;
         }
         .flow-card:hover {
             transform: translateY(-2px);
-            box-shadow: 0 8px 24px rgba(0, 0, 0, 0.3);
+            box-shadow: 0 8px 20px rgba(0, 0, 0, 0.12);
         }
 
         .flow-decision {
-            background: linear-gradient(135deg, rgba(245, 158, 11, 0.2) 0%, rgba(217, 119, 6, 0.2) 100%);
-            border-color: rgba(245, 158, 11, 0.5);
+            background: linear-gradient(135deg, #fffbeb 0%, #fef3c7 100%);
+            border-color: #fcd34d;
         }
         .flow-action {
-            background: linear-gradient(135deg, rgba(14, 165, 233, 0.2) 0%, rgba(2, 132, 199, 0.2) 100%);
-            border-color: rgba(14, 165, 233, 0.5);
+            background: linear-gradient(135deg, #f0f9ff 0%, #e0f2fe 100%);
+            border-color: #7dd3fc;
         }
 
         .flow-label {
@@ -214,7 +208,7 @@
             background: linear-gradient(135deg, var(--primary) 0%, var(--primary-dark) 100%);
             color: white;
             border: none;
-            box-shadow: 0 2px 8px rgba(14, 165, 233, 0.4);
+            box-shadow: 0 2px 8px rgba(2, 132, 199, 0.4);
             top: -12px;
             left: 50%;
             transform: translateX(-50%);
@@ -223,14 +217,14 @@
 
         .note-card {
             @apply p-4 text-sm mb-3 rounded-xl;
-            background: linear-gradient(135deg, rgba(14, 165, 233, 0.15) 0%, rgba(14, 165, 233, 0.05) 100%);
+            background: linear-gradient(135deg, #f0f9ff 0%, #e0f2fe 100%);
             border-left: 4px solid var(--primary);
             color: var(--text-primary);
         }
 
         .modal-overlay {
-            background: rgba(15, 23, 42, 0.8);
-            backdrop-filter: blur(8px);
+            background: rgba(15, 23, 42, 0.5);
+            backdrop-filter: blur(4px);
         }
 
         .draft-badge {
@@ -248,13 +242,13 @@
             transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
         }
         .tab-link:hover {
-            background: rgba(14, 165, 233, 0.1);
-            color: var(--primary-light);
+            background: rgba(2, 132, 199, 0.08);
+            color: var(--primary);
         }
         .tab-link.active {
             background: linear-gradient(135deg, var(--primary) 0%, var(--primary-dark) 100%);
             color: white;
-            box-shadow: 0 4px 14px rgba(14, 165, 233, 0.4);
+            box-shadow: 0 4px 14px rgba(2, 132, 199, 0.35);
         }
         .tab-link.active:hover {
             background: linear-gradient(135deg, var(--primary) 0%, var(--primary-dark) 100%);
@@ -262,37 +256,36 @@
         }
 
         .tab-link--sidebar {
-            @apply text-slate-400;
+            @apply text-slate-600;
         }
         .tab-link--sidebar:hover {
-            @apply bg-slate-800/80 text-slate-200;
+            @apply bg-sky-50 text-sky-700;
         }
         .tab-link--sidebar.active {
             background: linear-gradient(135deg, var(--primary) 0%, var(--primary-dark) 100%);
             @apply text-white;
-            box-shadow: 0 4px 14px rgba(14, 165, 233, 0.3);
+            box-shadow: 0 4px 14px rgba(2, 132, 199, 0.3);
         }
 
-        /* ========== Sidebar ========== */
+        /* ========== Sidebar (Light Theme) ========== */
         .sidebar-section-title {
             @apply text-[11px] uppercase tracking-widest font-bold;
-            color: var(--primary-light);
+            color: #0284c7;
         }
         .sidebar-card {
             @apply rounded-2xl p-4;
-            background: rgba(30, 41, 59, 0.6);
-            border: 1px solid rgba(148, 163, 184, 0.1);
-            backdrop-filter: blur(8px);
+            background: white;
+            border: 1px solid #e2e8f0;
         }
         .sidebar-label {
             @apply text-[11px];
-            color: var(--text-secondary);
+            color: #64748b;
         }
 
         /* ========== Premium Animations ========== */
         .animate-flash { animation: flash 1s; }
         @keyframes flash {
-            0% { background-color: rgba(16, 185, 129, 0.3); }
+            0% { background-color: rgba(16, 185, 129, 0.2); }
             100% { background-color: transparent; }
         }
 
@@ -312,19 +305,12 @@
             animation: fadeInUp 0.5s cubic-bezier(0.4, 0, 0.2, 1);
         }
 
-        /* Pulse Glow for Active Elements */
-        @keyframes pulseGlow {
-            0%, 100% { box-shadow: 0 0 20px rgba(14, 165, 233, 0.3); }
-            50% { box-shadow: 0 0 30px rgba(14, 165, 233, 0.5); }
-        }
-
         /* Premium Card Styles */
         .premium-card {
-            background: rgba(30, 41, 59, 0.6);
-            border: 1px solid rgba(148, 163, 184, 0.1);
-            backdrop-filter: blur(12px);
+            background: white;
+            border: 1px solid var(--border-color);
             border-radius: 16px;
-            box-shadow: 0 4px 24px rgba(0, 0, 0, 0.2);
+            box-shadow: 0 4px 20px rgba(0, 0, 0, 0.08);
         }
 
         /* Table Styles */
@@ -332,20 +318,20 @@
             @apply w-full;
         }
         thead {
-            background: rgba(30, 41, 59, 0.8);
+            background: #f8fafc;
         }
         thead th {
-            @apply text-slate-400 font-semibold text-xs uppercase tracking-wider;
+            @apply text-slate-500 font-semibold text-xs uppercase tracking-wider;
         }
         tbody tr {
-            @apply border-b border-slate-700/50;
+            @apply border-b border-slate-100;
             transition: background 0.2s ease;
         }
         tbody tr:hover {
-            background: rgba(14, 165, 233, 0.05);
+            background: rgba(2, 132, 199, 0.04);
         }
         tbody td {
-            @apply text-slate-300;
+            @apply text-slate-600;
         }
 
         /* Scrollbar Styling */
@@ -354,15 +340,15 @@
             height: 8px;
         }
         ::-webkit-scrollbar-track {
-            background: rgba(30, 41, 59, 0.5);
+            background: #f1f5f9;
             border-radius: 4px;
         }
         ::-webkit-scrollbar-thumb {
-            background: rgba(148, 163, 184, 0.3);
+            background: #cbd5e1;
             border-radius: 4px;
         }
         ::-webkit-scrollbar-thumb:hover {
-            background: rgba(148, 163, 184, 0.5);
+            background: #94a3b8;
         }
     </style>
 </head>
@@ -379,27 +365,27 @@
         </nav>
     </div>
 
-    <div id="auth-screen" class="fixed inset-0 z-[200] flex items-center justify-center p-4 hidden" style="background: linear-gradient(135deg, rgba(15, 23, 42, 0.95) 0%, rgba(15, 23, 42, 0.98) 100%); backdrop-filter: blur(12px);">
+    <div id="auth-screen" class="fixed inset-0 z-[200] flex items-center justify-center p-4 hidden" style="background: linear-gradient(135deg, #f8fafc 0%, #e2e8f0 100%);">
         <!-- Decorative Background Elements -->
         <div class="absolute inset-0 overflow-hidden pointer-events-none">
-            <div class="absolute top-1/4 left-1/4 w-96 h-96 rounded-full" style="background: radial-gradient(circle, rgba(14, 165, 233, 0.15) 0%, transparent 70%);"></div>
-            <div class="absolute bottom-1/4 right-1/4 w-80 h-80 rounded-full" style="background: radial-gradient(circle, rgba(245, 158, 11, 0.1) 0%, transparent 70%);"></div>
+            <div class="absolute top-1/4 left-1/4 w-96 h-96 rounded-full" style="background: radial-gradient(circle, rgba(14, 165, 233, 0.08) 0%, transparent 70%);"></div>
+            <div class="absolute bottom-1/4 right-1/4 w-80 h-80 rounded-full" style="background: radial-gradient(circle, rgba(245, 158, 11, 0.06) 0%, transparent 70%);"></div>
         </div>
 
-        <div class="w-full max-w-md rounded-3xl p-8 relative" style="background: rgba(30, 41, 59, 0.8); border: 1px solid rgba(148, 163, 184, 0.15); backdrop-filter: blur(20px); box-shadow: 0 25px 50px rgba(0, 0, 0, 0.4), 0 0 100px rgba(14, 165, 233, 0.1);">
+        <div class="w-full max-w-md rounded-3xl p-8 relative" style="background: white; border: 1px solid #e2e8f0; box-shadow: 0 25px 50px rgba(0, 0, 0, 0.1), 0 0 100px rgba(14, 165, 233, 0.05);">
             <!-- Header -->
             <div class="text-center mb-8">
                 <div class="w-16 h-16 mx-auto mb-4 rounded-2xl flex items-center justify-center text-3xl" style="background: linear-gradient(135deg, #0ea5e9 0%, #0284c7 100%); box-shadow: 0 8px 24px rgba(14, 165, 233, 0.4);">
                     🔐
                 </div>
-                <h2 class="text-2xl font-bold text-slate-100 tracking-tight">歡迎回來</h2>
-                <p class="text-sm text-slate-400 mt-2">請先登入或註冊後再進入系統</p>
+                <h2 class="text-2xl font-bold text-slate-800 tracking-tight">歡迎回來</h2>
+                <p class="text-sm text-slate-500 mt-2">請先登入或註冊後再進入系統</p>
             </div>
 
             <!-- Auth Tabs -->
-            <div class="flex gap-2 mb-6 p-1 rounded-xl" style="background: rgba(15, 23, 42, 0.5);">
+            <div class="flex gap-2 mb-6 p-1 rounded-xl" style="background: #f1f5f9;">
                 <button id="auth-tab-login" onclick="switchAuthTab('login')" class="flex-1 py-2.5 rounded-lg text-sm font-semibold transition-all duration-300" style="background: linear-gradient(135deg, #0ea5e9 0%, #0284c7 100%); color: white; box-shadow: 0 4px 12px rgba(14, 165, 233, 0.3);">登入</button>
-                <button id="auth-tab-register" onclick="switchAuthTab('register')" class="flex-1 py-2.5 rounded-lg text-sm font-semibold transition-all duration-300" style="background: transparent; color: #94a3b8;">註冊</button>
+                <button id="auth-tab-register" onclick="switchAuthTab('register')" class="flex-1 py-2.5 rounded-lg text-sm font-semibold transition-all duration-300" style="background: transparent; color: #64748b;">註冊</button>
             </div>
 
             <!-- Login Form -->
@@ -448,29 +434,29 @@
             </div>
 
             <!-- Footer -->
-            <div class="mt-8 pt-6 text-center" style="border-top: 1px solid rgba(148, 163, 184, 0.1);">
+            <div class="mt-8 pt-6 text-center" style="border-top: 1px solid #e2e8f0;">
                 <p class="text-xs text-slate-500">研發離職面談與留才評估管理系統</p>
             </div>
         </div>
     </div>
 
     <div id="app-shell" class="flex flex-1 min-h-0">
-        <aside class="hidden lg:flex flex-col w-72 px-5 py-6 lg:sticky lg:top-0 lg:h-screen" style="background: linear-gradient(180deg, rgba(15, 23, 42, 0.95) 0%, rgba(15, 23, 42, 0.98) 100%); border-right: 1px solid rgba(148, 163, 184, 0.1);">
+        <aside class="hidden lg:flex flex-col w-72 px-5 py-6 lg:sticky lg:top-0 lg:h-screen" style="background: #f8fafc; border-right: 1px solid #e2e8f0;">
             <div class="space-y-5">
                 <!-- Logo & Brand -->
-                <div class="pb-4" style="border-bottom: 1px solid rgba(148, 163, 184, 0.1);">
+                <div class="pb-4" style="border-bottom: 1px solid #e2e8f0;">
                     <div class="flex items-center gap-3 mb-2">
                         <div class="w-10 h-10 rounded-xl flex items-center justify-center text-xl" style="background: linear-gradient(135deg, #0ea5e9 0%, #0284c7 100%); box-shadow: 0 4px 12px rgba(14, 165, 233, 0.4);">
                             <span aria-hidden="true">🧭</span>
                         </div>
                         <div>
-                            <div class="text-base font-bold text-slate-100 tracking-tight">研發離職管理系統</div>
-                            <div class="text-[10px] text-sky-400 font-medium">R&D Retention System</div>
+                            <div class="text-base font-bold text-slate-800 tracking-tight">研發離職管理系統</div>
+                            <div class="text-[10px] text-sky-600 font-medium">R&D Retention System</div>
                         </div>
                     </div>
                     <div class="flex items-center gap-2 mt-3">
                         <span class="text-[10px] text-slate-500">Builder: Show</span>
-                        <span class="text-slate-700">|</span>
+                        <span class="text-slate-300">|</span>
                         <span class="text-[10px] text-slate-500">Cloud Sync</span>
                     </div>
                 </div>
@@ -482,24 +468,24 @@
                         <span id="connection-badge" class="text-[10px] font-bold px-2.5 py-1 rounded-lg" style="background: linear-gradient(135deg, #fbbf24 0%, #f59e0b 100%); color: #78350f; box-shadow: 0 2px 6px rgba(245, 158, 11, 0.3);">狀態：檢查中</span>
                     </div>
                     <div id="sync-hint" class="sidebar-label flex items-center gap-1.5">
-                        <span class="w-1.5 h-1.5 rounded-full bg-slate-500"></span>
+                        <span class="w-1.5 h-1.5 rounded-full bg-slate-400"></span>
                         雲端同步時間：尚未同步
                     </div>
-                    <div id="setup-hint" class="text-[11px] text-amber-400 hidden">若要啟用雲端同步，請設定 Firebase 連線參數</div>
+                    <div id="setup-hint" class="text-[11px] text-amber-600 hidden">若要啟用雲端同步，請設定 Firebase 連線參數</div>
                     <div class="sidebar-label font-medium flex items-center gap-1.5">
                         <span class="w-1.5 h-1.5 rounded-full bg-sky-500"></span>
-                        版本：<span id="app-version-tag" class="text-sky-400">載入中</span>
+                        版本：<span id="app-version-tag" class="text-sky-600">載入中</span>
                     </div>
                 </div>
 
                 <!-- Language Toggle -->
-                <button onclick="toggleLanguage()" class="w-full px-4 py-2.5 rounded-xl text-sm font-medium flex items-center justify-center gap-2 transition-all duration-300" style="background: rgba(30, 41, 59, 0.6); border: 1px solid rgba(148, 163, 184, 0.2); color: #94a3b8;" onmouseover="this.style.borderColor='#0ea5e9'; this.style.color='#38bdf8';" onmouseout="this.style.borderColor='rgba(148, 163, 184, 0.2)'; this.style.color='#94a3b8';">
+                <button onclick="toggleLanguage()" class="w-full px-4 py-2.5 rounded-xl text-sm font-medium flex items-center justify-center gap-2 transition-all duration-300" style="background: white; border: 1px solid #e2e8f0; color: #64748b;" onmouseover="this.style.borderColor='#0ea5e9'; this.style.color='#0284c7';" onmouseout="this.style.borderColor='#e2e8f0'; this.style.color='#64748b';">
                     <span>🌐</span> <span id="lang-btn-text">繁體 / 简体</span>
                 </button>
             </div>
 
             <!-- Navigation -->
-            <div class="mt-6 space-y-1.5 pt-5" style="border-top: 1px solid rgba(148, 163, 184, 0.1);">
+            <div class="mt-6 space-y-1.5 pt-5" style="border-top: 1px solid #e2e8f0;">
                 <div class="sidebar-section-title mb-3">功能導覽</div>
                 <button type="button" class="tab-link tab-link--sidebar w-full active" data-tab="case-processing" data-testid="side-nav-case-processing">
                     <span>📁</span> 案件處理
@@ -526,11 +512,11 @@
                         <div class="flex items-center gap-3">
                             <div id="auth-user-avatar" class="h-10 w-10 rounded-xl flex items-center justify-center text-sm font-bold text-white" style="background: linear-gradient(135deg, #0ea5e9 0%, #0284c7 100%); box-shadow: 0 4px 12px rgba(14, 165, 233, 0.3);">S</div>
                             <div class="flex-1">
-                                <span class="font-semibold text-xs text-slate-200 block">登入中</span>
+                                <span class="font-semibold text-xs text-slate-700 block">登入中</span>
                                 <span id="auth-user-label" class="text-[11px] text-slate-500"></span>
                             </div>
                         </div>
-                        <button onclick="logoutUser()" class="w-full mt-3 px-3 py-2 rounded-lg text-xs font-medium transition-all duration-300" style="background: rgba(239, 68, 68, 0.1); border: 1px solid rgba(239, 68, 68, 0.3); color: #fca5a5;" onmouseover="this.style.background='rgba(239, 68, 68, 0.2)';" onmouseout="this.style.background='rgba(239, 68, 68, 0.1)';">登出系統</button>
+                        <button onclick="logoutUser()" class="w-full mt-3 px-3 py-2 rounded-lg text-xs font-medium transition-all duration-300" style="background: #fef2f2; border: 1px solid #fecaca; color: #dc2626;" onmouseover="this.style.background='#fee2e2';" onmouseout="this.style.background='#fef2f2';">登出系統</button>
                     </div>
                 </div>
             </div>
@@ -542,14 +528,14 @@
         <section id="case-processing" class="tab-section hidden max-w-7xl mx-auto mb-12">
             <div class="mb-8 flex items-center justify-between">
                 <div>
-                    <h2 class="text-2xl font-bold text-slate-100 tracking-tight">離職案件處理作業</h2>
-                    <p class="text-slate-400 text-sm mt-1">請依照標準流程進行面談紀錄與決策</p>
+                    <h2 class="text-2xl font-bold text-slate-800 tracking-tight">離職案件處理作業</h2>
+                    <p class="text-slate-500 text-sm mt-1">請依照標準流程進行面談紀錄與決策</p>
                 </div>
             </div>
 
-            <div class="grid grid-cols-1 lg:grid-cols-12 gap-0 rounded-2xl overflow-hidden" style="background: rgba(30, 41, 59, 0.6); border: 1px solid rgba(148, 163, 184, 0.1); backdrop-filter: blur(12px); box-shadow: 0 4px 24px rgba(0, 0, 0, 0.2);">
+            <div class="grid grid-cols-1 lg:grid-cols-12 gap-0 rounded-2xl overflow-hidden" style="background: white; border: 1px solid #e2e8f0; box-shadow: 0 4px 24px rgba(0, 0, 0, 0.08);">
                 <!-- Left: Control Panel -->
-                <div class="lg:col-span-5" style="border-right: 1px solid rgba(148, 163, 184, 0.1); background: rgba(15, 23, 42, 0.3);">
+                <div class="lg:col-span-5" style="border-right: 1px solid #e2e8f0; background: #f8fafc;">
                     <div id="step-display" class="p-6 h-full flex flex-col justify-between">
                         <div>
                             <div class="flex items-center justify-between mb-5">
@@ -563,12 +549,12 @@
                                 </div>
                             </div>
 
-                            <h4 id="step-title" class="text-xl font-bold text-slate-100 mb-2">建立新離職案件</h4>
-                            <p id="step-desc" class="text-slate-400 leading-relaxed mb-6 text-sm">
+                            <h4 id="step-title" class="text-xl font-bold text-slate-800 mb-2">建立新離職案件</h4>
+                            <p id="step-desc" class="text-slate-500 leading-relaxed mb-6 text-sm">
                                 請輸入離職人員資訊以啟動評估流程。
                             </p>
 
-                            <div id="input-area-start" class="mb-6 space-y-4 p-5 rounded-xl" style="background: rgba(30, 41, 59, 0.5); border: 1px solid rgba(148, 163, 184, 0.1);">
+                            <div id="input-area-start" class="mb-6 space-y-4 p-5 rounded-xl" style="background: white; border: 1px solid #e2e8f0;">
                                 <div>
                                     <label class="block text-xs font-semibold text-slate-400 mb-2 uppercase tracking-wider">離職人員姓名 <span class="text-rose-400">*</span></label>
                                     <input type="text" id="emp-name" class="input-field" placeholder="請輸入全名">
@@ -589,19 +575,19 @@
 
                             <div id="notes-history-area" class="hidden mb-4 space-y-3"></div>
 
-                            <div id="input-area-notes" class="hidden mb-6 p-5 rounded-xl" style="background: rgba(30, 41, 59, 0.5); border: 1px solid rgba(148, 163, 184, 0.1);">
-                                <label id="notes-label" class="block text-xs font-semibold text-slate-300 mb-2 uppercase tracking-wider">本次面談紀錄 / 評語 (必填)</label>
+                            <div id="input-area-notes" class="hidden mb-6 p-5 rounded-xl" style="background: white; border: 1px solid #e2e8f0;">
+                                <label id="notes-label" class="block text-xs font-semibold text-slate-600 mb-2 uppercase tracking-wider">本次面談紀錄 / 評語 (必填)</label>
                                 <textarea id="current-notes" class="textarea-field" placeholder="請詳細記錄面談重點..."></textarea>
                             </div>
 
-                            <div id="input-area-meeting" class="hidden mb-6 p-5 rounded-xl" style="background: rgba(30, 41, 59, 0.5); border: 1px solid rgba(148, 163, 184, 0.1);">
-                                <label id="meeting-label" class="block text-xs font-semibold text-slate-300 mb-2 uppercase tracking-wider">會議安排時間 (必填)</label>
+                            <div id="input-area-meeting" class="hidden mb-6 p-5 rounded-xl" style="background: white; border: 1px solid #e2e8f0;">
+                                <label id="meeting-label" class="block text-xs font-semibold text-slate-600 mb-2 uppercase tracking-wider">會議安排時間 (必填)</label>
                                 <input type="datetime-local" id="meeting-time" class="input-field">
                             </div>
                         </div>
 
                         <!-- Action Buttons Area -->
-                        <div class="space-y-3 pt-6" style="border-top: 1px solid rgba(148, 163, 184, 0.1);">
+                        <div class="space-y-3 pt-6" style="border-top: 1px solid #e2e8f0;">
                             <div id="action-area">
                                 <div class="space-y-3">
                                     <button class="w-full btn-primary py-3" onclick="validateAndStart()">
@@ -614,8 +600,8 @@
                             </div>
                         </div>
 
-                        <div id="reset-area" class="hidden mt-4 pt-4 text-center" style="border-top: 1px solid rgba(148, 163, 184, 0.1);">
-                            <button onclick="resetFlow()" class="text-sm text-slate-500 hover:text-sky-400 flex items-center justify-center w-full font-medium transition-colors">
+                        <div id="reset-area" class="hidden mt-4 pt-4 text-center" style="border-top: 1px solid #e2e8f0;">
+                            <button onclick="resetFlow()" class="text-sm text-slate-500 hover:text-sky-600 flex items-center justify-center w-full font-medium transition-colors">
                                 <span>↺</span> <span class="ml-1">歸檔並建立新案件</span>
                             </button>
                         </div>
@@ -623,50 +609,50 @@
                 </div>
 
                 <!-- Right: Visual Path -->
-                <div class="lg:col-span-7 p-8 relative" style="background: rgba(30, 41, 59, 0.4);">
+                <div class="lg:col-span-7 p-8 relative" style="background: white;">
                     <div class="h-full flex flex-col items-center justify-center">
-                        <div id="case-info" class="hidden w-full max-w-md mb-8 p-4 rounded-xl text-sm flex justify-between items-center" style="background: linear-gradient(135deg, rgba(14, 165, 233, 0.15) 0%, rgba(14, 165, 233, 0.05) 100%); border: 1px solid rgba(14, 165, 233, 0.3);">
-                            <div class="flex items-center text-slate-200">
+                        <div id="case-info" class="hidden w-full max-w-md mb-8 p-4 rounded-xl text-sm flex justify-between items-center" style="background: linear-gradient(135deg, #f0f9ff 0%, #e0f2fe 100%); border: 1px solid #7dd3fc;">
+                            <div class="flex items-center text-slate-700">
                                 <span class="w-2 h-2 rounded-full mr-2" style="background: #0ea5e9; box-shadow: 0 0 8px rgba(14, 165, 233, 0.6);"></span>
-                                <span>人員: <strong id="v-emp-name" class="text-lg mr-4 text-sky-300"></strong></span>
+                                <span>人員: <strong id="v-emp-name" class="text-lg mr-4 text-sky-600"></strong></span>
                             </div>
-                            <div class="text-slate-400">
-                                崗位: <strong id="v-emp-role" class="mr-4 text-slate-200"></strong>
+                            <div class="text-slate-600">
+                                崗位: <strong id="v-emp-role" class="mr-4 text-slate-700"></strong>
                             </div>
-                            <div class="text-slate-400">
-                                主管: <strong id="v-sup-name" class="mr-4 text-slate-200"></strong>
+                            <div class="text-slate-600">
+                                主管: <strong id="v-sup-name" class="mr-4 text-slate-700"></strong>
                                 離職日期: <strong id="v-emp-resign-date"></strong>
                             </div>
                         </div>
 
                         <div id="flow-visual" class="w-full max-w-md space-y-3">
                             <!-- Visual Nodes - Premium Style -->
-                            <div id="v-step-1" class="step-node p-4 flex items-center text-slate-500" style="background: rgba(30, 41, 59, 0.5); border: 1px solid rgba(148, 163, 184, 0.15);">
-                                <div class="w-9 h-9 rounded-xl flex items-center justify-center mr-4 font-bold text-sm" style="background: rgba(148, 163, 184, 0.2); border: 1px solid rgba(148, 163, 184, 0.3);">1</div>
-                                <div><div class="font-semibold text-sm">直屬主管評估</div><div class="text-xs text-slate-500">初步篩選與面談</div></div>
+                            <div id="v-step-1" class="step-node p-4 flex items-center text-slate-600" style="background: #f8fafc; border: 1px solid #e2e8f0;">
+                                <div class="w-9 h-9 rounded-xl flex items-center justify-center mr-4 font-bold text-sm text-slate-500" style="background: #e2e8f0; border: 1px solid #cbd5e1;">1</div>
+                                <div><div class="font-semibold text-sm text-slate-700">直屬主管評估</div><div class="text-xs text-slate-500">初步篩選與面談</div></div>
                             </div>
-                            <div id="v-step-2" class="step-node p-4 flex items-center text-slate-500" style="background: rgba(30, 41, 59, 0.5); border: 1px solid rgba(148, 163, 184, 0.15);">
-                                <div class="w-9 h-9 rounded-xl flex items-center justify-center mr-4 font-bold text-sm" style="background: rgba(148, 163, 184, 0.2); border: 1px solid rgba(148, 163, 184, 0.3);">2</div>
-                                <div><div class="font-semibold text-sm">Show / Rex 面談</div><div class="text-xs text-slate-500">原因分析與二階評估</div></div>
+                            <div id="v-step-2" class="step-node p-4 flex items-center text-slate-600" style="background: #f8fafc; border: 1px solid #e2e8f0;">
+                                <div class="w-9 h-9 rounded-xl flex items-center justify-center mr-4 font-bold text-sm text-slate-500" style="background: #e2e8f0; border: 1px solid #cbd5e1;">2</div>
+                                <div><div class="font-semibold text-sm text-slate-700">Show / Rex 面談</div><div class="text-xs text-slate-500">原因分析與二階評估</div></div>
                             </div>
-                            <div id="v-step-3" class="step-node p-4 flex items-center text-slate-500" style="background: rgba(30, 41, 59, 0.5); border: 1px solid rgba(148, 163, 184, 0.15);">
-                                <div class="w-9 h-9 rounded-xl flex items-center justify-center mr-4 font-bold text-sm" style="background: rgba(148, 163, 184, 0.2); border: 1px solid rgba(148, 163, 184, 0.3);">3</div>
-                                <div><div class="font-semibold text-sm">Sammy 行政作業</div><div class="text-xs text-slate-500">會議時間協調</div></div>
+                            <div id="v-step-3" class="step-node p-4 flex items-center text-slate-600" style="background: #f8fafc; border: 1px solid #e2e8f0;">
+                                <div class="w-9 h-9 rounded-xl flex items-center justify-center mr-4 font-bold text-sm text-slate-500" style="background: #e2e8f0; border: 1px solid #cbd5e1;">3</div>
+                                <div><div class="font-semibold text-sm text-slate-700">Sammy 行政作業</div><div class="text-xs text-slate-500">會議時間協調</div></div>
                             </div>
-                            <div id="v-step-4" class="step-node p-4 flex items-center text-slate-500" style="background: rgba(30, 41, 59, 0.5); border: 1px solid rgba(148, 163, 184, 0.15);">
-                                <div class="w-9 h-9 rounded-xl flex items-center justify-center mr-4 font-bold text-sm" style="background: rgba(148, 163, 184, 0.2); border: 1px solid rgba(148, 163, 184, 0.3);">4</div>
-                                <div><div class="font-semibold text-sm">彥靈總 最終決策</div><div class="text-xs text-slate-500">留才核決</div></div>
+                            <div id="v-step-4" class="step-node p-4 flex items-center text-slate-600" style="background: #f8fafc; border: 1px solid #e2e8f0;">
+                                <div class="w-9 h-9 rounded-xl flex items-center justify-center mr-4 font-bold text-sm text-slate-500" style="background: #e2e8f0; border: 1px solid #cbd5e1;">4</div>
+                                <div><div class="font-semibold text-sm text-slate-700">彥靈總 最終決策</div><div class="text-xs text-slate-500">留才核決</div></div>
                             </div>
-                            <div id="v-step-5" class="step-node p-4 flex items-center text-slate-500" style="background: rgba(30, 41, 59, 0.5); border: 1px solid rgba(148, 163, 184, 0.15);">
-                                <div class="w-9 h-9 rounded-xl flex items-center justify-center mr-4 font-bold text-sm" style="background: rgba(148, 163, 184, 0.2); border: 1px solid rgba(148, 163, 184, 0.3);">5</div>
-                                <div><div class="font-semibold text-sm">留才方案/流程</div><div class="text-xs text-slate-500">方案執行與最終選擇</div></div>
+                            <div id="v-step-5" class="step-node p-4 flex items-center text-slate-600" style="background: #f8fafc; border: 1px solid #e2e8f0;">
+                                <div class="w-9 h-9 rounded-xl flex items-center justify-center mr-4 font-bold text-sm text-slate-500" style="background: #e2e8f0; border: 1px solid #cbd5e1;">5</div>
+                                <div><div class="font-semibold text-sm text-slate-700">留才方案/流程</div><div class="text-xs text-slate-500">方案執行與最終選擇</div></div>
                             </div>
-                            <div id="v-result" class="mt-8 p-6 rounded-2xl text-center hidden w-full" style="background: rgba(30, 41, 59, 0.6); border: 2px dashed rgba(148, 163, 184, 0.3);">
+                            <div id="v-result" class="mt-8 p-6 rounded-2xl text-center hidden w-full" style="background: #f8fafc; border: 2px dashed #cbd5e1;">
                                 <div id="result-icon" class="text-5xl mb-3"></div>
-                                <div id="result-title" class="font-bold text-xl mb-4 text-slate-100"></div>
-                                <div class="text-left p-4 rounded-xl text-sm space-y-3" style="background: rgba(15, 23, 42, 0.5); border: 1px solid rgba(148, 163, 184, 0.1);">
-                                    <p class="font-bold text-slate-400 text-xs pb-2 mb-2 uppercase tracking-wide" style="border-bottom: 1px solid rgba(148, 163, 184, 0.15);">案件全紀錄摘要</p>
-                                    <div id="final-summary-content" class="space-y-3 max-h-48 overflow-y-auto pr-2 text-slate-300"></div>
+                                <div id="result-title" class="font-bold text-xl mb-4 text-slate-800"></div>
+                                <div class="text-left p-4 rounded-xl text-sm space-y-3" style="background: white; border: 1px solid #e2e8f0;">
+                                    <p class="font-bold text-slate-500 text-xs pb-2 mb-2 uppercase tracking-wide" style="border-bottom: 1px solid #e2e8f0;">案件全紀錄摘要</p>
+                                    <div id="final-summary-content" class="space-y-3 max-h-48 overflow-y-auto pr-2 text-slate-600"></div>
                                 </div>
                             </div>
                         </div>
@@ -676,26 +662,26 @@
         </section>
 
         <!-- Records Table (Visible Drafts) -->
-        <section id="records" class="tab-section hidden max-w-7xl mx-auto mb-12 rounded-2xl overflow-hidden" style="background: rgba(30, 41, 59, 0.6); border: 1px solid rgba(148, 163, 184, 0.1); backdrop-filter: blur(12px); box-shadow: 0 4px 24px rgba(0, 0, 0, 0.2);">
-            <div class="p-6 flex justify-between items-center" style="background: rgba(15, 23, 42, 0.4); border-bottom: 1px solid rgba(148, 163, 184, 0.1);">
-                <h3 class="text-lg font-bold text-slate-100">歷史案件紀錄 (含未結案草稿)</h3>
+        <section id="records" class="tab-section hidden max-w-7xl mx-auto mb-12 rounded-2xl overflow-hidden" style="background: white; border: 1px solid #e2e8f0; box-shadow: 0 4px 24px rgba(0, 0, 0, 0.08);">
+            <div class="p-6 flex justify-between items-center" style="background: #f8fafc; border-bottom: 1px solid #e2e8f0;">
+                <h3 class="text-lg font-bold text-slate-800">歷史案件紀錄 (含未結案草稿)</h3>
                 <span class="text-xs px-3 py-1 rounded-lg" style="background: linear-gradient(135deg, #fbbf24 0%, #f59e0b 100%); color: #78350f;">草稿會標示為黃色</span>
             </div>
             <div class="overflow-x-auto">
                 <table class="min-w-full">
-                    <thead style="background: rgba(15, 23, 42, 0.6);">
+                    <thead style="background: #f1f5f9;">
                         <tr>
-                            <th class="px-6 py-4 text-left text-xs font-semibold text-slate-400 uppercase tracking-wider">日期</th>
-                            <th class="px-6 py-4 text-left text-xs font-semibold text-slate-400 uppercase tracking-wider">離職日期</th>
-                            <th class="px-6 py-4 text-left text-xs font-semibold text-slate-400 uppercase tracking-wider">離職人員</th>
-                            <th class="px-6 py-4 text-left text-xs font-semibold text-slate-400 uppercase tracking-wider">崗位</th>
-                            <th class="px-6 py-4 text-left text-xs font-semibold text-slate-400 uppercase tracking-wider">處理人</th>
-                            <th class="px-6 py-4 text-left text-xs font-semibold text-slate-400 uppercase tracking-wider">階段</th>
-                            <th class="px-6 py-4 text-left text-xs font-semibold text-slate-400 uppercase tracking-wider">狀態/結果</th>
-                            <th class="px-6 py-4 text-left text-xs font-semibold text-slate-400 uppercase tracking-wider">操作</th>
+                            <th class="px-6 py-4 text-left text-xs font-semibold text-slate-500 uppercase tracking-wider">日期</th>
+                            <th class="px-6 py-4 text-left text-xs font-semibold text-slate-500 uppercase tracking-wider">離職日期</th>
+                            <th class="px-6 py-4 text-left text-xs font-semibold text-slate-500 uppercase tracking-wider">離職人員</th>
+                            <th class="px-6 py-4 text-left text-xs font-semibold text-slate-500 uppercase tracking-wider">崗位</th>
+                            <th class="px-6 py-4 text-left text-xs font-semibold text-slate-500 uppercase tracking-wider">處理人</th>
+                            <th class="px-6 py-4 text-left text-xs font-semibold text-slate-500 uppercase tracking-wider">階段</th>
+                            <th class="px-6 py-4 text-left text-xs font-semibold text-slate-500 uppercase tracking-wider">狀態/結果</th>
+                            <th class="px-6 py-4 text-left text-xs font-semibold text-slate-500 uppercase tracking-wider">操作</th>
                         </tr>
                     </thead>
-                    <tbody id="records-body" style="background: rgba(30, 41, 59, 0.3);">
+                    <tbody id="records-body" style="background: white;">
                         <!-- Data populated by JS -->
                     </tbody>
                 </table>
@@ -703,11 +689,11 @@
         </section>
 
         <!-- Analytics Dashboard -->
-        <section id="analytics" class="tab-section max-w-7xl mx-auto mb-12 rounded-2xl overflow-hidden" style="background: rgba(30, 41, 59, 0.6); border: 1px solid rgba(148, 163, 184, 0.1); backdrop-filter: blur(12px); box-shadow: 0 4px 24px rgba(0, 0, 0, 0.2);">
-            <div class="p-6 flex flex-col md:flex-row md:items-center md:justify-between gap-4" style="background: rgba(15, 23, 42, 0.4); border-bottom: 1px solid rgba(148, 163, 184, 0.1);">
+        <section id="analytics" class="tab-section max-w-7xl mx-auto mb-12 rounded-2xl overflow-hidden" style="background: white; border: 1px solid #e2e8f0; box-shadow: 0 4px 24px rgba(0, 0, 0, 0.08);">
+            <div class="p-6 flex flex-col md:flex-row md:items-center md:justify-between gap-4" style="background: #f8fafc; border-bottom: 1px solid #e2e8f0;">
                 <div>
-                    <h3 class="text-lg font-bold text-slate-100">數據看板</h3>
-                    <p class="text-sm text-slate-400 mt-1">即時追蹤留才成功率、草稿數與各階段案件量</p>
+                    <h3 class="text-lg font-bold text-slate-800">數據看板</h3>
+                    <p class="text-sm text-slate-500 mt-1">即時追蹤留才成功率、草稿數與各階段案件量</p>
                 </div>
                 <div class="flex flex-col md:flex-row md:items-center md:space-x-4 w-full md:w-auto">
                     <div class="mb-3 md:mb-0">
@@ -736,18 +722,18 @@
                 </div>
             </div>
             <div class="p-6 grid grid-cols-1 lg:grid-cols-2 gap-6">
-                <div class="rounded-xl p-5" style="background: rgba(15, 23, 42, 0.4); border: 1px solid rgba(148, 163, 184, 0.1);">
+                <div class="rounded-xl p-5" style="background: #f8fafc; border: 1px solid #e2e8f0;">
                     <div class="flex items-center justify-between mb-4">
-                        <h4 class="font-bold text-slate-200 text-sm">留才 / 離職 / 草稿分布</h4>
+                        <h4 class="font-bold text-slate-700 text-sm">留才 / 離職 / 草稿分布</h4>
                         <span class="text-xs text-slate-500">案件結果總覽</span>
                     </div>
                     <div class="chart-container">
                         <canvas id="chart-outcome"></canvas>
                     </div>
                 </div>
-                <div class="rounded-xl p-5" style="background: rgba(15, 23, 42, 0.4); border: 1px solid rgba(148, 163, 184, 0.1);">
+                <div class="rounded-xl p-5" style="background: #f8fafc; border: 1px solid #e2e8f0;">
                     <div class="flex items-center justify-between mb-4">
-                        <h4 class="font-bold text-slate-200 text-sm">各階段案件量</h4>
+                        <h4 class="font-bold text-slate-700 text-sm">各階段案件量</h4>
                         <span class="text-xs text-slate-500">含進行中與結案紀錄</span>
                     </div>
                     <div class="chart-container">
@@ -756,9 +742,9 @@
                 </div>
             </div>
             <div class="p-6 grid grid-cols-1 lg:grid-cols-2 gap-6">
-                <div class="rounded-xl p-5" style="background: rgba(15, 23, 42, 0.4); border: 1px solid rgba(148, 163, 184, 0.1);">
+                <div class="rounded-xl p-5" style="background: #f8fafc; border: 1px solid #e2e8f0;">
                     <div class="flex items-center justify-between mb-4">
-                        <h4 class="font-bold text-slate-200 text-sm">離職去向 Top 5</h4>
+                        <h4 class="font-bold text-slate-700 text-sm">離職去向 Top 5</h4>
                         <span class="text-xs text-slate-500">僅計算離職結果的案件</span>
                     </div>
                     <div class="chart-container">
@@ -766,9 +752,9 @@
                     </div>
                     <p id="destinations-empty" class="text-center text-sm text-slate-500 mt-3 hidden">${convertText('目前無離職去向資料', currentLang)}</p>
                 </div>
-                <div class="rounded-xl p-5" style="background: rgba(15, 23, 42, 0.4); border: 1px solid rgba(148, 163, 184, 0.1);">
+                <div class="rounded-xl p-5" style="background: #f8fafc; border: 1px solid #e2e8f0;">
                     <div class="flex items-center justify-between mb-4">
-                        <h4 class="font-bold text-slate-200 text-sm">離職/留任崗位分布</h4>
+                        <h4 class="font-bold text-slate-700 text-sm">離職/留任崗位分布</h4>
                         <span class="text-xs text-slate-500">僅計算已結案 (留任/離職)</span>
                     </div>
                     <div class="chart-container">
@@ -800,9 +786,9 @@
                 </div>
             </div>
             <div class="p-6">
-                <div class="rounded-xl p-5" style="background: rgba(15, 23, 42, 0.4); border: 1px solid rgba(148, 163, 184, 0.1);">
+                <div class="rounded-xl p-5" style="background: #f8fafc; border: 1px solid #e2e8f0;">
                     <div class="flex items-center justify-between mb-4">
-                        <h4 class="font-bold text-slate-200 text-sm">離職後薪資增幅分布</h4>
+                        <h4 class="font-bold text-slate-700 text-sm">離職後薪資增幅分布</h4>
                         <span class="text-xs text-slate-500">僅計算離職且填寫下家公司與增幅的案件</span>
                     </div>
                     <div class="chart-container">
@@ -817,8 +803,8 @@
         <section id="process-map" class="tab-section hidden max-w-7xl mx-auto mb-12 py-8">
             <div class="flex flex-col md:flex-row justify-center items-center mb-8 relative">
                 <div class="text-center">
-                    <h3 class="text-xl font-bold text-slate-100">標準作業流程圖 (SOP)</h3>
-                    <p class="text-slate-400 mt-1 text-sm">離職面談與留才決策路徑</p>
+                    <h3 class="text-xl font-bold text-slate-800">標準作業流程圖 (SOP)</h3>
+                    <p class="text-slate-500 mt-1 text-sm">離職面談與留才決策路徑</p>
                 </div>
                 <div class="mt-4 md:mt-0 md:absolute md:right-0">
                     <button id="btn-download-sop" onclick="downloadSOPImage()" class="btn-outline flex items-center text-sm px-4 py-2.5">
@@ -828,7 +814,7 @@
             </div>
 
             <div class="overflow-x-auto pb-4 flex justify-center">
-                <div id="sop-tree-container" class="tree p-8 rounded-2xl min-w-[800px] flex justify-center" style="background: rgba(30, 41, 59, 0.6); border: 1px solid rgba(148, 163, 184, 0.1);"> 
+                <div id="sop-tree-container" class="tree p-8 rounded-2xl min-w-[800px] flex justify-center" style="background: white; border: 1px solid #e2e8f0; box-shadow: 0 4px 24px rgba(0, 0, 0, 0.08);"> 
                     <ul>
                         <li>
                             <div class="flow-card">1. 人員提出離職<br><span class="text-xs text-gray-500">(向直屬主管)</span></div>
@@ -893,41 +879,41 @@
         </section>
         
         <!-- ADMIN PANEL SECTION -->
-        <section id="admin-panel" class="tab-section py-12 rounded-2xl mt-8" style="background: rgba(30, 41, 59, 0.6); border: 1px solid rgba(148, 163, 184, 0.1); backdrop-filter: blur(12px); box-shadow: 0 4px 24px rgba(0, 0, 0, 0.2);">
+        <section id="admin-panel" class="tab-section py-12 rounded-2xl mt-8" style="background: white; border: 1px solid #e2e8f0; box-shadow: 0 4px 24px rgba(0, 0, 0, 0.08);">
             <div class="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8">
                 <div class="mb-8 text-center">
-                    <h3 class="text-2xl font-bold flex items-center justify-center text-slate-100"><span class="mr-2">📋</span> 所有面談紀錄總覽</h3>
-                    <p class="text-slate-400 text-sm mt-2">提供快速檢視與編輯記錄，方便追蹤離職案件</p>
+                    <h3 class="text-2xl font-bold flex items-center justify-center text-slate-800"><span class="mr-2">📋</span> 所有面談紀錄總覽</h3>
+                    <p class="text-slate-500 text-sm mt-2">提供快速檢視與編輯記錄，方便追蹤離職案件</p>
                 </div>
 
                 <div id="admin-dashboard">
-                    <div class="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between mb-6 pb-4" style="border-bottom: 1px solid rgba(148, 163, 184, 0.1);">
+                    <div class="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between mb-6 pb-4" style="border-bottom: 1px solid #e2e8f0;">
                         <div>
-                            <h4 class="text-lg font-bold text-slate-100">紀錄列表</h4>
+                            <h4 class="text-lg font-bold text-slate-800">紀錄列表</h4>
                             <p class="text-xs text-slate-500 mt-1">包含草稿與已結案紀錄</p>
                         </div>
                         <div class="flex gap-2">
                              <button onclick="exportToCSV()" class="text-sm px-4 py-2.5 rounded-xl flex items-center font-semibold transition-all duration-300" style="background: linear-gradient(135deg, #10b981 0%, #059669 100%); color: white; box-shadow: 0 4px 14px rgba(16, 185, 129, 0.4);"><span>📥</span> <span class="ml-2">下載報表 (CSV)</span></button>
                         </div>
                     </div>
-                    <div class="rounded-xl overflow-x-auto" style="background: rgba(15, 23, 42, 0.4); border: 1px solid rgba(148, 163, 184, 0.1);">
+                    <div class="rounded-xl overflow-x-auto" style="background: #f8fafc; border: 1px solid #e2e8f0;">
                         <table class="min-w-full">
-                            <thead style="background: rgba(15, 23, 42, 0.6);">
+                            <thead style="background: #f1f5f9;">
                                 <tr>
-                                    <th class="px-4 py-4 text-left text-xs font-semibold text-slate-400 uppercase tracking-wider">日期</th>
-                                    <th class="px-4 py-4 text-left text-xs font-semibold text-slate-400 uppercase tracking-wider">離職日期</th>
-                                    <th class="px-4 py-4 text-left text-xs font-semibold text-slate-400 uppercase tracking-wider">人員</th>
-                                    <th class="px-4 py-4 text-left text-xs font-semibold text-slate-400 uppercase tracking-wider">崗位</th>
-                                    <th class="px-4 py-4 text-left text-xs font-semibold text-slate-400 uppercase tracking-wider">處理人</th>
-                                    <th class="px-4 py-4 text-left text-xs font-semibold text-slate-400 uppercase tracking-wider">階段</th>
-                                    <th class="px-4 py-4 text-left text-xs font-semibold text-slate-400 uppercase tracking-wider">離職後薪資增幅</th>
-                                    <th class="px-4 py-4 text-left text-xs font-semibold text-slate-400 uppercase tracking-wider">離職去向</th>
-                                    <th class="px-4 py-4 text-left text-xs font-semibold text-slate-400 uppercase tracking-wider">節點紀錄</th>
-                                    <th class="px-4 py-4 text-left text-xs font-semibold text-slate-400 uppercase tracking-wider">結果</th>
-                                    <th class="px-4 py-4 text-left text-xs font-semibold text-slate-400 uppercase tracking-wider">操作</th>
+                                    <th class="px-4 py-4 text-left text-xs font-semibold text-slate-500 uppercase tracking-wider">日期</th>
+                                    <th class="px-4 py-4 text-left text-xs font-semibold text-slate-500 uppercase tracking-wider">離職日期</th>
+                                    <th class="px-4 py-4 text-left text-xs font-semibold text-slate-500 uppercase tracking-wider">人員</th>
+                                    <th class="px-4 py-4 text-left text-xs font-semibold text-slate-500 uppercase tracking-wider">崗位</th>
+                                    <th class="px-4 py-4 text-left text-xs font-semibold text-slate-500 uppercase tracking-wider">處理人</th>
+                                    <th class="px-4 py-4 text-left text-xs font-semibold text-slate-500 uppercase tracking-wider">階段</th>
+                                    <th class="px-4 py-4 text-left text-xs font-semibold text-slate-500 uppercase tracking-wider">離職後薪資增幅</th>
+                                    <th class="px-4 py-4 text-left text-xs font-semibold text-slate-500 uppercase tracking-wider">離職去向</th>
+                                    <th class="px-4 py-4 text-left text-xs font-semibold text-slate-500 uppercase tracking-wider">節點紀錄</th>
+                                    <th class="px-4 py-4 text-left text-xs font-semibold text-slate-500 uppercase tracking-wider">結果</th>
+                                    <th class="px-4 py-4 text-left text-xs font-semibold text-slate-500 uppercase tracking-wider">操作</th>
                                 </tr>
                             </thead>
-                            <tbody id="admin-table-body" class="text-sm" style="background: rgba(30, 41, 59, 0.3);"></tbody>
+                            <tbody id="admin-table-body" class="text-sm" style="background: white;"></tbody>
                         </table>
                     </div>
                 </div>
@@ -936,34 +922,34 @@
 
         <!-- Edit Modal -->
         <div id="edit-modal" class="fixed inset-0 modal-overlay hidden z-[100] flex items-center justify-center p-4">
-            <div class="rounded-2xl w-full max-w-lg overflow-hidden modal-card" style="background: rgba(30, 41, 59, 0.95); border: 1px solid rgba(148, 163, 184, 0.15); backdrop-filter: blur(20px); box-shadow: 0 25px 50px rgba(0, 0, 0, 0.4);">
+            <div class="rounded-2xl w-full max-w-lg overflow-hidden modal-card" style="background: white; border: 1px solid #e2e8f0; box-shadow: 0 25px 50px rgba(0, 0, 0, 0.15);">
                 <div class="px-6 py-4 flex justify-between items-center" style="background: linear-gradient(135deg, #0ea5e9 0%, #0284c7 100%);">
                     <h3 class="text-white font-bold">編輯紀錄</h3>
                     <button onclick="closeEditModal()" class="text-white/70 hover:text-white transition-colors">✕</button>
                 </div>
                 <div class="p-6 space-y-4">
                     <input type="hidden" id="edit-id">
-                    <div><label class="block text-xs font-semibold text-slate-400 mb-2 uppercase tracking-wider">建檔日期</label><input type="date" id="edit-date" class="input-field" readonly style="opacity: 0.7;"></div>
-                    <div><label class="block text-xs font-semibold text-slate-400 mb-2 uppercase tracking-wider">離職人員</label><input type="text" id="edit-emp" class="input-field"></div>
-                    <div><label class="block text-xs font-semibold text-slate-400 mb-2 uppercase tracking-wider">崗位</label><input type="text" id="edit-role" class="input-field" placeholder="例：前端工程師"></div>
-                    <div><label class="block text-xs font-semibold text-slate-400 mb-2 uppercase tracking-wider">離職日期</label><input type="date" id="edit-resign-date" class="input-field"></div>
-                    <div><label class="block text-xs font-semibold text-slate-400 mb-2 uppercase tracking-wider">最後處理人</label><input type="text" id="edit-handler" class="input-field"></div>
-                    <div><label class="block text-xs font-semibold text-slate-400 mb-2 uppercase tracking-wider">目前階段</label><input type="text" id="edit-stage" class="input-field" placeholder="如：留才確認 / 彥靈總 / 直屬主管"></div>
-                    <div><label class="block text-xs font-semibold text-slate-400 mb-2 uppercase tracking-wider">離職後去向（公司）</label><input type="text" id="edit-next-company" class="input-field" placeholder="例：Google / AWS / 其他"></div>
-                    <div><label class="block text-xs font-semibold text-slate-400 mb-2 uppercase tracking-wider">離職後薪資增幅 (%)</label><input type="number" step="0.1" id="edit-salary-growth" class="input-field" placeholder="例：10 表示到下一家公司薪資多 10%"></div>
-                    <div class="grid grid-cols-1 gap-3 rounded-xl p-4" style="background: rgba(15, 23, 42, 0.5); border: 1px solid rgba(148, 163, 184, 0.1);">
-                        <div class="text-xs font-bold text-sky-400 mb-1 uppercase tracking-wider">節點紀錄</div>
-                        <div><label class="block text-xs font-semibold text-slate-400 mb-2">直屬主管</label><textarea id="edit-note-supervisor" class="textarea-field"></textarea></div>
-                        <div><label class="block text-xs font-semibold text-slate-400 mb-2">Show/Rex</label><textarea id="edit-note-showrex" class="textarea-field"></textarea></div>
-                        <div><label class="block text-xs font-semibold text-slate-400 mb-2">Sammy 會議時間</label><input type="datetime-local" id="edit-meeting-time" class="input-field"></div>
-                        <div><label class="block text-xs font-semibold text-slate-400 mb-2">彥靈總</label><textarea id="edit-note-yanling" class="textarea-field"></textarea></div>
-                        <div><label class="block text-xs font-semibold text-slate-400 mb-2">留才方案</label><textarea id="edit-note-retention" class="textarea-field"></textarea></div>
+                    <div><label class="block text-xs font-semibold text-slate-500 mb-2 uppercase tracking-wider">建檔日期</label><input type="date" id="edit-date" class="input-field" readonly style="opacity: 0.7;"></div>
+                    <div><label class="block text-xs font-semibold text-slate-500 mb-2 uppercase tracking-wider">離職人員</label><input type="text" id="edit-emp" class="input-field"></div>
+                    <div><label class="block text-xs font-semibold text-slate-500 mb-2 uppercase tracking-wider">崗位</label><input type="text" id="edit-role" class="input-field" placeholder="例：前端工程師"></div>
+                    <div><label class="block text-xs font-semibold text-slate-500 mb-2 uppercase tracking-wider">離職日期</label><input type="date" id="edit-resign-date" class="input-field"></div>
+                    <div><label class="block text-xs font-semibold text-slate-500 mb-2 uppercase tracking-wider">最後處理人</label><input type="text" id="edit-handler" class="input-field"></div>
+                    <div><label class="block text-xs font-semibold text-slate-500 mb-2 uppercase tracking-wider">目前階段</label><input type="text" id="edit-stage" class="input-field" placeholder="如：留才確認 / 彥靈總 / 直屬主管"></div>
+                    <div><label class="block text-xs font-semibold text-slate-500 mb-2 uppercase tracking-wider">離職後去向（公司）</label><input type="text" id="edit-next-company" class="input-field" placeholder="例：Google / AWS / 其他"></div>
+                    <div><label class="block text-xs font-semibold text-slate-500 mb-2 uppercase tracking-wider">離職後薪資增幅 (%)</label><input type="number" step="0.1" id="edit-salary-growth" class="input-field" placeholder="例：10 表示到下一家公司薪資多 10%"></div>
+                    <div class="grid grid-cols-1 gap-3 rounded-xl p-4" style="background: #f8fafc; border: 1px solid #e2e8f0;">
+                        <div class="text-xs font-bold text-sky-600 mb-1 uppercase tracking-wider">節點紀錄</div>
+                        <div><label class="block text-xs font-semibold text-slate-500 mb-2">直屬主管</label><textarea id="edit-note-supervisor" class="textarea-field"></textarea></div>
+                        <div><label class="block text-xs font-semibold text-slate-500 mb-2">Show/Rex</label><textarea id="edit-note-showrex" class="textarea-field"></textarea></div>
+                        <div><label class="block text-xs font-semibold text-slate-500 mb-2">Sammy 會議時間</label><input type="datetime-local" id="edit-meeting-time" class="input-field"></div>
+                        <div><label class="block text-xs font-semibold text-slate-500 mb-2">彥靈總</label><textarea id="edit-note-yanling" class="textarea-field"></textarea></div>
+                        <div><label class="block text-xs font-semibold text-slate-500 mb-2">留才方案</label><textarea id="edit-note-retention" class="textarea-field"></textarea></div>
                     </div>
-                    <div><label class="block text-xs font-semibold text-slate-400 mb-2 uppercase tracking-wider">備註紀錄</label><textarea id="edit-note" class="textarea-field"></textarea></div>
-                    <div><label class="block text-xs font-semibold text-slate-400 mb-2 uppercase tracking-wider">最終結果</label><select id="edit-result" class="select-field"><option value="success">成功留任</option><option value="fail">留才失敗 (仍離職)</option><option value="exit">正常離職</option><option value="draft">進行中 (Draft)</option></select></div>
+                    <div><label class="block text-xs font-semibold text-slate-500 mb-2 uppercase tracking-wider">備註紀錄</label><textarea id="edit-note" class="textarea-field"></textarea></div>
+                    <div><label class="block text-xs font-semibold text-slate-500 mb-2 uppercase tracking-wider">最終結果</label><select id="edit-result" class="select-field"><option value="success">成功留任</option><option value="fail">留才失敗 (仍離職)</option><option value="exit">正常離職</option><option value="draft">進行中 (Draft)</option></select></div>
                 </div>
-                <div class="px-6 py-4 flex justify-between items-center" style="background: rgba(15, 23, 42, 0.5); border-top: 1px solid rgba(148, 163, 184, 0.1);">
-                    <button onclick="deleteRecordFromModal()" class="text-rose-400 hover:text-rose-300 text-sm font-bold transition-colors">🗑️ 刪除此紀錄</button>
+                <div class="px-6 py-4 flex justify-between items-center" style="background: #f8fafc; border-top: 1px solid #e2e8f0;">
+                    <button onclick="deleteRecordFromModal()" class="text-rose-500 hover:text-rose-600 text-sm font-bold transition-colors">🗑️ 刪除此紀錄</button>
                     <div class="flex space-x-3"><button onclick="closeEditModal()" class="btn-outline">取消</button><button onclick="saveEdit()" class="btn-primary">儲存變更</button></div>
                 </div>
             </div>
