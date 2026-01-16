@@ -3,6 +3,9 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
+    <meta http-equiv="Pragma" content="no-cache">
+    <meta http-equiv="Expires" content="0">
     <title>研發離職面談與留才評估管理系統 (GitHub 部署版)</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
@@ -436,6 +439,7 @@
             <!-- Footer -->
             <div class="mt-8 pt-6 text-center" style="border-top: 1px solid #e2e8f0;">
                 <p class="text-xs text-slate-500">研發離職面談與留才評估管理系統</p>
+                <p class="text-xs text-slate-400 mt-2">版本：<span id="auth-version-tag">載入中</span> | <span id="auth-firebase-status">檢查 Firebase...</span></p>
             </div>
         </div>
     </div>
@@ -958,7 +962,7 @@
     <!-- Standard Script Block -->
     <script>
         // Versioning
-        const APP_VERSION = 'v1.1.8';
+        const APP_VERSION = 'v1.2.0';
 
         // Global State
         window.allRecords = []; 
@@ -1215,7 +1219,11 @@
             }
             if (isFirebaseAuthEnabled()) {
                 try {
-                    await window.firebaseAuthApi.signIn(email, password);
+                    const userCredential = await window.firebaseAuthApi.signIn(email, password);
+                    // [修正] 登入成功後主動更新狀態，不依賴 onAuthStateChanged 回調延遲
+                    if (userCredential?.user && window.handleFirebaseAuthState) {
+                        window.handleFirebaseAuthState(userCredential.user);
+                    }
                     if (passwordInput) passwordInput.value = '';
                     toggleResetForm(false);
                 } catch (error) {
@@ -1261,11 +1269,14 @@
             }
             if (isFirebaseAuthEnabled()) {
                 try {
-                    await window.firebaseAuthApi.register(email, password);
+                    const userCredential = await window.firebaseAuthApi.register(email, password);
+                    // [修正] 註冊成功後主動更新狀態，讓用戶直接進入系統
+                    if (userCredential?.user && window.handleFirebaseAuthState) {
+                        window.handleFirebaseAuthState(userCredential.user);
+                    }
                     if (emailInput) emailInput.value = '';
                     if (passwordInput) passwordInput.value = '';
                     if (confirmInput) confirmInput.value = '';
-                    switchAuthTab('login');
                 } catch (error) {
                     setAuthError('auth-register-error', mapFirebaseAuthError(error));
                 }
@@ -1862,6 +1873,9 @@
         document.addEventListener('DOMContentLoaded', () => {
             const versionTag = document.getElementById('app-version-tag');
             if (versionTag) versionTag.textContent = APP_VERSION;
+            // 登入畫面版本號
+            const authVersionTag = document.getElementById('auth-version-tag');
+            if (authVersionTag) authVersionTag.textContent = APP_VERSION;
             applyLanguagePreferences();
             applyTestModeAuth();
             updateAuthUI();
@@ -2515,14 +2529,15 @@
         import { getFirestore, collection, addDoc, onSnapshot, doc, updateDoc, deleteDoc, query, orderBy, setDoc } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js";
 
         // Firebase 配置：優先從環境變數 __firebase_config 讀取
-        // 部署時請透過 script 標籤注入：<script>window.__firebase_config = '{"apiKey":"...","projectId":"..."}';</script>
+        // 部署時請透過 script 標籤注入：window.__firebase_config = '{"apiKey":"...","projectId":"..."}'
         const defaultFirebaseConfig = {
-            apiKey: "YOUR_API_KEY",
-            authDomain: "YOUR_PROJECT_ID.firebaseapp.com",
-            projectId: "YOUR_PROJECT_ID",
-            storageBucket: "YOUR_PROJECT_ID.appspot.com",
-            messagingSenderId: "YOUR_MESSAGING_SENDER_ID",
-            appId: "YOUR_APP_ID"
+            apiKey: "AIzaSyAGPH6HKTi8yikT9rG_VhoivwWycM5LO6Y",
+            authDomain: "resignation-system.firebaseapp.com",
+            projectId: "resignation-system",
+            storageBucket: "resignation-system.firebasestorage.app",
+            messagingSenderId: "20779725950",
+            appId: "1:20779725950:web:12a2d3b753d5cf3bc0d42f",
+            measurementId: "G-EH2FBKQTKD"
         };
 
         let finalConfig = defaultFirebaseConfig;
@@ -2537,8 +2552,22 @@
             console.warn("Firebase 配置解析失敗，使用預設值", e);
         }
 
+        // 調試：輸出配置檢查結果
+        console.log('[Firebase] 配置檢查:', {
+            apiKey: finalConfig.apiKey ? finalConfig.apiKey.substring(0, 10) + '...' : '未設定',
+            projectId: finalConfig.projectId,
+            isPlaceholder: isPlaceholderFirebaseConfig(finalConfig)
+        });
+
         if (isPlaceholderFirebaseConfig(finalConfig)) {
+            console.warn('[Firebase] 檢測到佔位符配置，切換到離線模式');
             initializeLocalMode('缺少 Firebase 設定，改用瀏覽器離線儲存');
+            // 更新登入畫面狀態
+            const statusEl = document.getElementById('auth-firebase-status');
+            if (statusEl) {
+                statusEl.textContent = '缺少 Firebase 設定';
+                statusEl.style.color = '#ef4444';
+            }
         }
 
         let app, auth, db;
@@ -2584,8 +2613,20 @@
             }
         }
 
+        // 更新登入畫面 Firebase 狀態顯示
+        function updateAuthFirebaseStatus(status, isConnected) {
+            const el = document.getElementById('auth-firebase-status');
+            if (el) {
+                el.textContent = status;
+                el.style.color = isConnected ? '#10b981' : '#ef4444';
+            }
+        }
+
         function bootstrapFirebase() {
-            if (useLocalStorage) return;
+            if (useLocalStorage) {
+                updateAuthFirebaseStatus('離線模式', false);
+                return;
+            }
             try {
                 app = initializeApp(finalConfig);
                 auth = getAuth(app);
@@ -2597,6 +2638,7 @@
                     sendPasswordReset: (email) => sendPasswordResetEmail(auth, email),
                     signOut: () => signOut(auth)
                 };
+                updateAuthFirebaseStatus('Firebase 已連線 ✓', true);
                 initAuth();
                 onAuthStateChanged(auth, (user) => {
                     if (user) {
@@ -2615,6 +2657,7 @@
                 const detail = describeFirebaseError(e);
                 console.error('Firebase 初始化失敗，改用離線備份模式', e);
                 window.firebaseAuthApi = { enabled: false };
+                updateAuthFirebaseStatus(`連線失敗: ${detail || '未知錯誤'}`, false);
                 initializeLocalMode(detail ? `Firebase 初始化失敗：${detail}` : 'Firebase 初始化失敗');
             }
         }
