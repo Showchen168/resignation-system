@@ -14,11 +14,13 @@
     <style type="text/tailwindcss">
         /* ========== 精緻專業風格 - Light Premium Theme ========== */
 
-        /* CSS Variables for Light Theme */
+        /* CSS Variables for Light Theme - Design System v1.0 */
         :root {
-            --primary: #0284c7;
-            --primary-dark: #0369a1;
-            --primary-light: #0ea5e9;
+            --primary: #2563eb;
+            --primary-dark: #1d4ed8;
+            --primary-light: #3b82f6;
+            --success: #059669;
+            --error: #dc2626;
             --accent: #f59e0b;
             --accent-light: #fbbf24;
             --surface: #ffffff;
@@ -26,7 +28,7 @@
             --bg-main: #f1f5f9;
             --bg-card: #ffffff;
             --text-primary: #1e293b;
-            --text-secondary: #64748b;
+            --text-secondary: #475569;
             --text-muted: #94a3b8;
             --border-color: #e2e8f0;
             --border-light: #f1f5f9;
@@ -53,8 +55,8 @@
             width: 100%;
             height: 100%;
             background-image:
-                radial-gradient(ellipse at 20% 30%, rgba(14, 165, 233, 0.06) 0%, transparent 50%),
-                radial-gradient(ellipse at 80% 70%, rgba(245, 158, 11, 0.04) 0%, transparent 50%);
+                radial-gradient(ellipse at 20% 30%, rgba(37, 99, 235, 0.05) 0%, transparent 50%),
+                radial-gradient(ellipse at 80% 70%, rgba(245, 158, 11, 0.03) 0%, transparent 50%);
             pointer-events: none;
             z-index: 0;
         }
@@ -84,45 +86,67 @@
         }
         .history-item { @apply mb-1; }
         .history-badge {
-            @apply inline-block text-xs font-semibold text-sky-700 bg-sky-50 border border-sky-200 rounded-lg px-2.5 py-1;
+            @apply inline-block text-xs font-semibold text-blue-700 bg-blue-50 border border-blue-200 rounded-lg px-2.5 py-1;
         }
         .modal-card { @apply max-h-[90vh] overflow-y-auto; }
 
-        /* ========== Premium Buttons ========== */
+        /* ========== Design System Buttons ========== */
         .btn-primary {
-            @apply text-white px-5 py-2.5 rounded-xl font-semibold flex items-center justify-center;
+            @apply text-white px-5 py-2.5 rounded-lg font-medium flex items-center justify-center;
             background: linear-gradient(135deg, var(--primary) 0%, var(--primary-dark) 100%);
-            box-shadow: 0 4px 14px rgba(2, 132, 199, 0.35);
-            transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+            box-shadow: 0 2px 8px rgba(37, 99, 235, 0.3);
+            transition: all 0.2s ease;
         }
         .btn-primary:hover {
-            transform: translateY(-2px);
-            box-shadow: 0 6px 20px rgba(2, 132, 199, 0.45);
+            transform: translateY(-1px);
+            box-shadow: 0 4px 12px rgba(37, 99, 235, 0.4);
         }
         .btn-primary:active {
             transform: translateY(0);
         }
 
+        .btn-success {
+            @apply text-white px-5 py-2.5 rounded-lg font-medium flex items-center justify-center;
+            background: linear-gradient(135deg, var(--success) 0%, #047857 100%);
+            box-shadow: 0 2px 8px rgba(5, 150, 105, 0.3);
+            transition: all 0.2s ease;
+        }
+        .btn-success:hover {
+            transform: translateY(-1px);
+            box-shadow: 0 4px 12px rgba(5, 150, 105, 0.4);
+        }
+
+        .btn-danger {
+            @apply text-white px-5 py-2.5 rounded-lg font-medium flex items-center justify-center;
+            background: linear-gradient(135deg, var(--error) 0%, #b91c1c 100%);
+            box-shadow: 0 2px 8px rgba(220, 38, 38, 0.3);
+            transition: all 0.2s ease;
+        }
+        .btn-danger:hover {
+            transform: translateY(-1px);
+            box-shadow: 0 4px 12px rgba(220, 38, 38, 0.4);
+        }
+
         .btn-save {
-            @apply px-5 py-2.5 rounded-xl font-semibold flex items-center justify-center;
+            @apply px-5 py-2.5 rounded-lg font-medium flex items-center justify-center;
             background: linear-gradient(135deg, #fbbf24 0%, #f59e0b 100%);
             color: #78350f;
-            box-shadow: 0 4px 14px rgba(245, 158, 11, 0.3);
-            transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+            box-shadow: 0 2px 8px rgba(245, 158, 11, 0.25);
+            transition: all 0.2s ease;
         }
         .btn-save:hover {
-            transform: translateY(-2px);
-            box-shadow: 0 6px 20px rgba(245, 158, 11, 0.4);
+            transform: translateY(-1px);
+            box-shadow: 0 4px 12px rgba(245, 158, 11, 0.35);
         }
 
         .btn-outline {
-            @apply border-2 border-slate-300 text-slate-600 px-5 py-2.5 rounded-xl font-semibold flex items-center justify-center;
+            @apply border border-slate-200 text-slate-600 px-5 py-2.5 rounded-lg font-medium flex items-center justify-center;
             background: white;
-            transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+            transition: all 0.2s ease;
         }
         .btn-outline:hover {
-            @apply border-sky-500 text-sky-600;
-            background: rgba(14, 165, 233, 0.05);
+            @apply border-blue-500 text-blue-600;
+            background: rgba(37, 99, 235, 0.05);
         }
 
         .btn-back {
@@ -130,23 +154,23 @@
             transition: all 0.2s ease;
         }
 
-        /* ========== Premium Form Inputs ========== */
+        /* ========== Design System Form Inputs ========== */
         .input-field {
-            @apply w-full rounded-xl px-4 py-3 text-slate-700 transition-all;
+            @apply w-full rounded-lg px-4 py-2.5 text-slate-700 transition-all;
             background: white;
             border: 1px solid var(--border-color);
         }
         .input-field:focus {
             @apply outline-none;
             border-color: var(--primary);
-            box-shadow: 0 0 0 3px rgba(2, 132, 199, 0.15);
+            box-shadow: 0 0 0 3px rgba(37, 99, 235, 0.1);
         }
         .input-field::placeholder {
             @apply text-slate-400;
         }
 
         .select-field {
-            @apply w-full rounded-xl px-4 py-3 text-slate-700 transition-all appearance-none;
+            @apply w-full rounded-lg px-4 py-2.5 text-slate-700 transition-all appearance-none;
             background: white;
             border: 1px solid var(--border-color);
             background-image: url("data:image/svg+xml,%3csvg xmlns='http://www.w3.org/2000/svg' fill='none' viewBox='0 0 20 20'%3e%3cpath stroke='%2364748b' stroke-linecap='round' stroke-linejoin='round' stroke-width='1.5' d='M6 8l4 4 4-4'/%3e%3c/svg%3e");
@@ -157,44 +181,44 @@
         .select-field:focus {
             @apply outline-none;
             border-color: var(--primary);
-            box-shadow: 0 0 0 3px rgba(2, 132, 199, 0.15);
+            box-shadow: 0 0 0 3px rgba(37, 99, 235, 0.1);
         }
 
         .textarea-field {
-            @apply w-full rounded-xl px-4 py-3 text-slate-700 transition-all min-h-[100px];
+            @apply w-full rounded-lg px-4 py-2.5 text-slate-700 transition-all min-h-[100px];
             background: white;
             border: 1px solid var(--border-color);
         }
         .textarea-field:focus {
             @apply outline-none;
             border-color: var(--primary);
-            box-shadow: 0 0 0 3px rgba(2, 132, 199, 0.15);
+            box-shadow: 0 0 0 3px rgba(37, 99, 235, 0.1);
         }
 
         /* ========== Flowchart & Cards ========== */
         .tree { display: flex; justify-content: center; padding: 20px; }
         .tree ul { padding-top: 20px; position: relative; display: flex; justify-content: center; }
         .tree li { float: left; text-align: center; list-style-type: none; position: relative; padding: 20px 5px 0 5px; }
-        .tree li::before, .tree li::after { content: ''; position: absolute; top: 0; right: 50%; border-top: 2px solid rgba(2, 132, 199, 0.3); width: 50%; height: 20px; }
-        .tree li::after { right: auto; left: 50%; border-left: 2px solid rgba(2, 132, 199, 0.3); }
+        .tree li::before, .tree li::after { content: ''; position: absolute; top: 0; right: 50%; border-top: 2px solid rgba(37, 99, 235, 0.3); width: 50%; height: 20px; }
+        .tree li::after { right: auto; left: 50%; border-left: 2px solid rgba(37, 99, 235, 0.3); }
         .tree li:only-child::after, .tree li:only-child::before { display: none; }
         .tree li:only-child { padding-top: 0; }
         .tree li:first-child::before, .tree li:last-child::after { border: 0 none; }
-        .tree li:last-child::before { border-right: 2px solid rgba(2, 132, 199, 0.3); border-radius: 0 5px 0 0; }
+        .tree li:last-child::before { border-right: 2px solid rgba(37, 99, 235, 0.3); border-radius: 0 5px 0 0; }
         .tree li:first-child::after { border-radius: 5px 0 0 0; }
-        .tree ul ul::before { content: ''; position: absolute; top: 0; left: 50%; border-left: 2px solid rgba(2, 132, 199, 0.3); width: 0; height: 20px; }
+        .tree ul ul::before { content: ''; position: absolute; top: 0; left: 50%; border-left: 2px solid rgba(37, 99, 235, 0.3); width: 0; height: 20px; }
 
         .flow-card {
             @apply rounded-xl p-4 text-center relative z-10 text-sm font-medium inline-block min-w-[140px] max-w-[200px];
             background: white;
             border: 1px solid var(--border-color);
             color: var(--text-primary);
-            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.08);
-            transition: all 0.3s ease;
+            box-shadow: 0 1px 3px rgba(0, 0, 0, 0.08);
+            transition: all 0.2s ease;
         }
         .flow-card:hover {
-            transform: translateY(-2px);
-            box-shadow: 0 8px 20px rgba(0, 0, 0, 0.12);
+            transform: translateY(-1px);
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
         }
 
         .flow-decision {
@@ -202,8 +226,8 @@
             border-color: #fcd34d;
         }
         .flow-action {
-            background: linear-gradient(135deg, #f0f9ff 0%, #e0f2fe 100%);
-            border-color: #7dd3fc;
+            background: linear-gradient(135deg, #eff6ff 0%, #dbeafe 100%);
+            border-color: #93c5fd;
         }
 
         .flow-label {
@@ -211,7 +235,7 @@
             background: linear-gradient(135deg, var(--primary) 0%, var(--primary-dark) 100%);
             color: white;
             border: none;
-            box-shadow: 0 2px 8px rgba(2, 132, 199, 0.4);
+            box-shadow: 0 2px 6px rgba(37, 99, 235, 0.35);
             top: -12px;
             left: 50%;
             transform: translateX(-50%);
@@ -220,7 +244,7 @@
 
         .note-card {
             @apply p-4 text-sm mb-3 rounded-xl;
-            background: linear-gradient(135deg, #f0f9ff 0%, #e0f2fe 100%);
+            background: linear-gradient(135deg, #eff6ff 0%, #dbeafe 100%);
             border-left: 4px solid var(--primary);
             color: var(--text-primary);
         }
@@ -240,18 +264,18 @@
 
         /* ========== Navigation Tabs ========== */
         .tab-link {
-            @apply flex items-center gap-2 px-4 py-2.5 rounded-xl text-sm font-medium;
+            @apply flex items-center gap-2 px-4 py-2.5 rounded-lg text-sm font-medium;
             color: var(--text-secondary);
-            transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+            transition: all 0.2s ease;
         }
         .tab-link:hover {
-            background: rgba(2, 132, 199, 0.08);
+            background: rgba(37, 99, 235, 0.08);
             color: var(--primary);
         }
         .tab-link.active {
             background: linear-gradient(135deg, var(--primary) 0%, var(--primary-dark) 100%);
             color: white;
-            box-shadow: 0 4px 14px rgba(2, 132, 199, 0.35);
+            box-shadow: 0 2px 8px rgba(37, 99, 235, 0.3);
         }
         .tab-link.active:hover {
             background: linear-gradient(135deg, var(--primary) 0%, var(--primary-dark) 100%);
@@ -262,27 +286,28 @@
             @apply text-slate-600;
         }
         .tab-link--sidebar:hover {
-            @apply bg-sky-50 text-sky-700;
+            @apply bg-blue-50 text-blue-700;
         }
         .tab-link--sidebar.active {
             background: linear-gradient(135deg, var(--primary) 0%, var(--primary-dark) 100%);
             @apply text-white;
-            box-shadow: 0 4px 14px rgba(2, 132, 199, 0.3);
+            box-shadow: 0 2px 8px rgba(37, 99, 235, 0.25);
         }
 
         /* ========== Sidebar (Light Theme) ========== */
         .sidebar-section-title {
             @apply text-[11px] uppercase tracking-widest font-bold;
-            color: #0284c7;
+            color: #2563eb;
         }
         .sidebar-card {
-            @apply rounded-2xl p-4;
+            @apply rounded-xl p-4;
             background: white;
             border: 1px solid #e2e8f0;
+            box-shadow: 0 1px 3px rgba(0, 0, 0, 0.05);
         }
         .sidebar-label {
             @apply text-[11px];
-            color: #64748b;
+            color: #475569;
         }
 
         /* ========== Premium Animations ========== */
@@ -308,12 +333,12 @@
             animation: fadeInUp 0.5s cubic-bezier(0.4, 0, 0.2, 1);
         }
 
-        /* Premium Card Styles */
+        /* Design System Card Styles */
         .premium-card {
             background: white;
             border: 1px solid var(--border-color);
-            border-radius: 16px;
-            box-shadow: 0 4px 20px rgba(0, 0, 0, 0.08);
+            border-radius: 12px;
+            box-shadow: 0 1px 3px rgba(0, 0, 0, 0.05);
         }
 
         /* Table Styles */
@@ -331,7 +356,7 @@
             transition: background 0.2s ease;
         }
         tbody tr:hover {
-            background: rgba(2, 132, 199, 0.04);
+            background: rgba(37, 99, 235, 0.04);
         }
         tbody td {
             @apply text-slate-600;
@@ -371,14 +396,14 @@
     <div id="auth-screen" class="fixed inset-0 z-[200] flex items-center justify-center p-4 hidden" style="background: linear-gradient(135deg, #f8fafc 0%, #e2e8f0 100%);">
         <!-- Decorative Background Elements -->
         <div class="absolute inset-0 overflow-hidden pointer-events-none">
-            <div class="absolute top-1/4 left-1/4 w-96 h-96 rounded-full" style="background: radial-gradient(circle, rgba(14, 165, 233, 0.08) 0%, transparent 70%);"></div>
+            <div class="absolute top-1/4 left-1/4 w-96 h-96 rounded-full" style="background: radial-gradient(circle, rgba(37, 99, 235, 0.08) 0%, transparent 70%);"></div>
             <div class="absolute bottom-1/4 right-1/4 w-80 h-80 rounded-full" style="background: radial-gradient(circle, rgba(245, 158, 11, 0.06) 0%, transparent 70%);"></div>
         </div>
 
-        <div class="w-full max-w-md rounded-3xl p-8 relative" style="background: white; border: 1px solid #e2e8f0; box-shadow: 0 25px 50px rgba(0, 0, 0, 0.1), 0 0 100px rgba(14, 165, 233, 0.05);">
+        <div class="w-full max-w-md rounded-3xl p-8 relative" style="background: white; border: 1px solid #e2e8f0; box-shadow: 0 25px 50px rgba(0, 0, 0, 0.1), 0 0 100px rgba(37, 99, 235, 0.05);">
             <!-- Header -->
             <div class="text-center mb-8">
-                <div class="w-16 h-16 mx-auto mb-4 rounded-2xl flex items-center justify-center text-3xl" style="background: linear-gradient(135deg, #0ea5e9 0%, #0284c7 100%); box-shadow: 0 8px 24px rgba(14, 165, 233, 0.4);">
+                <div class="w-16 h-16 mx-auto mb-4 rounded-2xl flex items-center justify-center text-3xl" style="background: linear-gradient(135deg, #3b82f6 0%, #2563eb 100%); box-shadow: 0 8px 24px rgba(37, 99, 235, 0.4);">
                     🔐
                 </div>
                 <h2 class="text-2xl font-bold text-slate-800 tracking-tight">歡迎回來</h2>
@@ -387,7 +412,7 @@
 
             <!-- Auth Tabs -->
             <div class="flex gap-2 mb-6 p-1 rounded-xl" style="background: #f1f5f9;">
-                <button id="auth-tab-login" onclick="switchAuthTab('login')" class="flex-1 py-2.5 rounded-lg text-sm font-semibold transition-all duration-300" style="background: linear-gradient(135deg, #0ea5e9 0%, #0284c7 100%); color: white; box-shadow: 0 4px 12px rgba(14, 165, 233, 0.3);">登入</button>
+                <button id="auth-tab-login" onclick="switchAuthTab('login')" class="flex-1 py-2.5 rounded-lg text-sm font-semibold transition-all duration-300" style="background: linear-gradient(135deg, #3b82f6 0%, #2563eb 100%); color: white; box-shadow: 0 4px 12px rgba(37, 99, 235, 0.3);">登入</button>
                 <button id="auth-tab-register" onclick="switchAuthTab('register')" class="flex-1 py-2.5 rounded-lg text-sm font-semibold transition-all duration-300" style="background: transparent; color: #64748b;">註冊</button>
             </div>
 
@@ -403,7 +428,7 @@
                 </div>
                 <p id="auth-login-error" class="text-xs text-red-400 hidden"></p>
                 <button onclick="loginWithEmail()" class="w-full btn-primary py-3 text-base" data-testid="auth-login-submit">登入系統</button>
-                <button type="button" onclick="toggleResetForm(true)" class="w-full text-sm text-slate-500 hover:text-sky-400 transition-colors py-2">忘記密碼？</button>
+                <button type="button" onclick="toggleResetForm(true)" class="w-full text-sm text-slate-500 hover:text-blue-500 transition-colors py-2">忘記密碼？</button>
             </div>
 
             <!-- Register Form -->
@@ -450,12 +475,12 @@
                 <!-- Logo & Brand -->
                 <div class="pb-4" style="border-bottom: 1px solid #e2e8f0;">
                     <div class="flex items-center gap-3 mb-2">
-                        <div class="w-10 h-10 rounded-xl flex items-center justify-center text-xl" style="background: linear-gradient(135deg, #0ea5e9 0%, #0284c7 100%); box-shadow: 0 4px 12px rgba(14, 165, 233, 0.4);">
+                        <div class="w-10 h-10 rounded-xl flex items-center justify-center text-xl" style="background: linear-gradient(135deg, #3b82f6 0%, #2563eb 100%); box-shadow: 0 4px 12px rgba(37, 99, 235, 0.4);">
                             <span aria-hidden="true">🧭</span>
                         </div>
                         <div>
                             <div class="text-base font-bold text-slate-800 tracking-tight">研發離職管理系統</div>
-                            <div class="text-[10px] text-sky-600 font-medium">R&D Retention System</div>
+                            <div class="text-[10px] text-blue-600 font-medium">R&D Retention System</div>
                         </div>
                     </div>
                     <div class="flex items-center gap-2 mt-3">
@@ -474,13 +499,13 @@
                     <div id="sync-hint" class="hidden"></div>
                     <div id="setup-hint" class="text-[11px] text-amber-600 hidden">若要啟用雲端同步，請設定 Firebase 連線參數</div>
                     <div class="sidebar-label font-medium flex items-center gap-1.5">
-                        <span class="w-1.5 h-1.5 rounded-full bg-sky-500"></span>
-                        版本：<span id="app-version-tag" class="text-sky-600">載入中</span>
+                        <span class="w-1.5 h-1.5 rounded-full bg-blue-500"></span>
+                        版本：<span id="app-version-tag" class="text-blue-600">載入中</span>
                     </div>
                 </div>
 
                 <!-- Language Toggle -->
-                <button onclick="toggleLanguage()" class="w-full px-4 py-2.5 rounded-xl text-sm font-medium flex items-center justify-center gap-2 transition-all duration-300" style="background: white; border: 1px solid #e2e8f0; color: #64748b;" onmouseover="this.style.borderColor='#0ea5e9'; this.style.color='#0284c7';" onmouseout="this.style.borderColor='#e2e8f0'; this.style.color='#64748b';">
+                <button onclick="toggleLanguage()" class="w-full px-4 py-2.5 rounded-lg text-sm font-medium flex items-center justify-center gap-2 transition-all duration-200" style="background: white; border: 1px solid #e2e8f0; color: #475569;" onmouseover="this.style.borderColor='#3b82f6'; this.style.color='#2563eb';" onmouseout="this.style.borderColor='#e2e8f0'; this.style.color='#475569';">
                     <span>🌐</span> <span id="lang-btn-text">繁體 / 简体</span>
                 </button>
             </div>
@@ -511,7 +536,7 @@
                     <div class="sidebar-section-title mb-3">使用者資訊</div>
                     <div id="auth-user-controls" class="hidden">
                         <div class="flex items-center gap-3">
-                            <div id="auth-user-avatar" class="h-10 w-10 rounded-xl flex items-center justify-center text-sm font-bold text-white" style="background: linear-gradient(135deg, #0ea5e9 0%, #0284c7 100%); box-shadow: 0 4px 12px rgba(14, 165, 233, 0.3);">S</div>
+                            <div id="auth-user-avatar" class="h-10 w-10 rounded-xl flex items-center justify-center text-sm font-bold text-white" style="background: linear-gradient(135deg, #3b82f6 0%, #2563eb 100%); box-shadow: 0 4px 12px rgba(37, 99, 235, 0.3);">S</div>
                             <div class="flex-1">
                                 <span class="font-semibold text-xs text-slate-700 block">登入中</span>
                                 <span id="auth-user-label" class="text-[11px] text-slate-500"></span>
@@ -540,7 +565,7 @@
                     <div id="step-display" class="p-6 h-full flex flex-col justify-between">
                         <div>
                             <div class="flex items-center justify-between mb-5">
-                                <div class="flex items-center space-x-2 font-semibold text-xs uppercase tracking-wider" style="color: #38bdf8;">
+                                <div class="flex items-center space-x-2 font-semibold text-xs uppercase tracking-wider" style="color: #60a5fa;">
                                     <span id="current-stage-icon">📂</span>
                                     <span id="current-stage-label">案件建立</span>
                                 </div>
@@ -602,7 +627,7 @@
                         </div>
 
                         <div id="reset-area" class="hidden mt-4 pt-4 text-center" style="border-top: 1px solid #e2e8f0;">
-                            <button onclick="resetFlow()" class="text-sm text-slate-500 hover:text-sky-600 flex items-center justify-center w-full font-medium transition-colors">
+                            <button onclick="resetFlow()" class="text-sm text-slate-500 hover:text-blue-600 flex items-center justify-center w-full font-medium transition-colors">
                                 <span>↺</span> <span class="ml-1">歸檔並建立新案件</span>
                             </button>
                         </div>
@@ -612,10 +637,10 @@
                 <!-- Right: Visual Path -->
                 <div class="lg:col-span-7 p-8 relative" style="background: white;">
                     <div class="h-full flex flex-col items-center justify-center">
-                        <div id="case-info" class="hidden w-full max-w-md mb-8 p-4 rounded-xl text-sm flex justify-between items-center" style="background: linear-gradient(135deg, #f0f9ff 0%, #e0f2fe 100%); border: 1px solid #7dd3fc;">
+                        <div id="case-info" class="hidden w-full max-w-md mb-8 p-4 rounded-xl text-sm flex justify-between items-center" style="background: linear-gradient(135deg, #eff6ff 0%, #dbeafe 100%); border: 1px solid #93c5fd;">
                             <div class="flex items-center text-slate-700">
-                                <span class="w-2 h-2 rounded-full mr-2" style="background: #0ea5e9; box-shadow: 0 0 8px rgba(14, 165, 233, 0.6);"></span>
-                                <span>人員: <strong id="v-emp-name" class="text-lg mr-4 text-sky-600"></strong></span>
+                                <span class="w-2 h-2 rounded-full mr-2" style="background: #3b82f6; box-shadow: 0 0 8px rgba(37, 99, 235, 0.6);"></span>
+                                <span>人員: <strong id="v-emp-name" class="text-lg mr-4 text-blue-600"></strong></span>
                             </div>
                             <div class="text-slate-600">
                                 崗位: <strong id="v-emp-role" class="mr-4 text-slate-700"></strong>
@@ -704,10 +729,10 @@
                         </select>
                     </div>
                     <div class="grid grid-cols-1 sm:grid-cols-3 gap-3 w-full md:w-auto">
-                        <div class="rounded-xl px-4 py-3 text-sm" style="background: linear-gradient(135deg, rgba(14, 165, 233, 0.15) 0%, rgba(14, 165, 233, 0.05) 100%); border: 1px solid rgba(14, 165, 233, 0.3);">
-                            <div class="text-sky-400 font-bold text-xs uppercase">總案件數</div>
-                            <div id="stat-total-cases" class="text-2xl font-extrabold text-sky-300 mt-1">0</div>
-                            <div class="text-xs text-sky-500 mt-1">含草稿、結案紀錄</div>
+                        <div class="rounded-xl px-4 py-3 text-sm" style="background: linear-gradient(135deg, rgba(37, 99, 235, 0.15) 0%, rgba(37, 99, 235, 0.05) 100%); border: 1px solid rgba(37, 99, 235, 0.3);">
+                            <div class="text-blue-400 font-bold text-xs uppercase">總案件數</div>
+                            <div id="stat-total-cases" class="text-2xl font-extrabold text-blue-400 mt-1">0</div>
+                            <div class="text-xs text-blue-500 mt-1">含草稿、結案紀錄</div>
                         </div>
                         <div class="rounded-xl px-4 py-3 text-sm" style="background: linear-gradient(135deg, rgba(245, 158, 11, 0.15) 0%, rgba(245, 158, 11, 0.05) 100%); border: 1px solid rgba(245, 158, 11, 0.3);">
                             <div class="text-amber-400 font-bold text-xs uppercase">草稿 / 進行中</div>
@@ -894,7 +919,7 @@
                             <p class="text-xs text-slate-500 mt-1">包含草稿與已結案紀錄</p>
                         </div>
                         <div class="flex gap-2">
-                             <button onclick="exportToCSV()" class="text-sm px-4 py-2.5 rounded-xl flex items-center font-semibold transition-all duration-300" style="background: linear-gradient(135deg, #10b981 0%, #059669 100%); color: white; box-shadow: 0 4px 14px rgba(16, 185, 129, 0.4);"><span>📥</span> <span class="ml-2">下載報表 (CSV)</span></button>
+                             <button onclick="exportToCSV()" class="btn-success text-sm"><span>📥</span> <span class="ml-2">下載報表 (CSV)</span></button>
                         </div>
                     </div>
                     <div class="rounded-xl overflow-x-auto" style="background: #f8fafc; border: 1px solid #e2e8f0;">
@@ -924,7 +949,7 @@
         <!-- Edit Modal -->
         <div id="edit-modal" class="fixed inset-0 modal-overlay hidden z-[100] flex items-center justify-center p-4">
             <div class="rounded-2xl w-full max-w-lg overflow-hidden modal-card" style="background: white; border: 1px solid #e2e8f0; box-shadow: 0 25px 50px rgba(0, 0, 0, 0.15);">
-                <div class="px-6 py-4 flex justify-between items-center" style="background: linear-gradient(135deg, #0ea5e9 0%, #0284c7 100%);">
+                <div class="px-6 py-4 flex justify-between items-center" style="background: linear-gradient(135deg, #3b82f6 0%, #2563eb 100%);">
                     <h3 class="text-white font-bold">編輯紀錄</h3>
                     <button onclick="closeEditModal()" class="text-white/70 hover:text-white transition-colors">✕</button>
                 </div>
@@ -939,7 +964,7 @@
                     <div><label class="block text-xs font-semibold text-slate-500 mb-2 uppercase tracking-wider">離職後去向（公司）</label><input type="text" id="edit-next-company" class="input-field" placeholder="例：Google / AWS / 其他"></div>
                     <div><label class="block text-xs font-semibold text-slate-500 mb-2 uppercase tracking-wider">離職後薪資增幅 (%)</label><input type="number" step="0.1" id="edit-salary-growth" class="input-field" placeholder="例：10 表示到下一家公司薪資多 10%"></div>
                     <div class="grid grid-cols-1 gap-3 rounded-xl p-4" style="background: #f8fafc; border: 1px solid #e2e8f0;">
-                        <div class="text-xs font-bold text-sky-600 mb-1 uppercase tracking-wider">節點紀錄</div>
+                        <div class="text-xs font-bold text-blue-600 mb-1 uppercase tracking-wider">節點紀錄</div>
                         <div><label class="block text-xs font-semibold text-slate-500 mb-2">直屬主管</label><textarea id="edit-note-supervisor" class="textarea-field"></textarea></div>
                         <div><label class="block text-xs font-semibold text-slate-500 mb-2">Show/Rex</label><textarea id="edit-note-showrex" class="textarea-field"></textarea></div>
                         <div><label class="block text-xs font-semibold text-slate-500 mb-2">Sammy 會議時間</label><input type="datetime-local" id="edit-meeting-time" class="input-field"></div>
